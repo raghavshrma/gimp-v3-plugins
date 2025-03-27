@@ -1,5 +1,5 @@
 {
-  "cSpell.words": ["BABL", "drawables", "redeclarator", "TYPELIB"],
+  "cSpell.words": ["BABL", "drawables", "Gegl", "redeclarator", "TYPELIB"],
   "python.analysis.diagnosticSeverityOverrides": {
     "reportMissingModuleSource": "none"
   },
