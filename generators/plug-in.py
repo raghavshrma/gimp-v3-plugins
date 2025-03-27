@@ -246,7 +246,6 @@ def run_func(
     try:
         return execute(procedure, run_mode, image, drawables, config, data)
     except Exception as e:
-        # Gimp.message("Error: %s" % e)
         return gimp_error.execution(procedure, e)
 
 class {class_name}(Gimp.PlugIn):
