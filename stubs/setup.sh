@@ -10,6 +10,9 @@ local python_exec="${gimp_path}/MacOS/python3"
 
 $python_exec -m venv .venv --upgrade --upgrade-deps
 
-local python_v_exec="${root}/.venv/bin/python3"
+local python_v_exec="${root}/.venv/bin/python"
+local pip_v_exec="${root}/.venv/bin/pip"
 
-$python_v_exec -m pip install -r "${dir}/requirements.txt"
+$pip_v_exec install -r "${dir}/requirements.txt"
+
+# $pip_v_exec install pygobject-stubs --no-cache-dir --config-settings=config=Gtk3,Gdk3
