@@ -12,6 +12,19 @@ gi_repo_dir="${gi_stub_dir}/repository"
 
 touch "${gi_stub_dir}/__init__.py"
 touch "${gi_repo_dir}/__init__.py"
+touch "${gi_repo_dir}/__init__.pyi"
+
+echo "from typing import Optional
+
+__version__: str
+
+def check_version(version: str) -> None: ...
+def require_version(namespace: str, version: str) -> None: ...
+def require_versions(versions: dict[str, str]) -> None: ...
+def get_required_version(namespace: str) -> Optional[str]: ...
+def require_foreign(namespace: str, symbol: Optional[str] = None) -> None: ...
+" >"${gi_stub_dir}/__init__.pyi"
+
 
 gimp_path='/Applications/GIMP.app/Contents'
 r_path="${gimp_path}/Resources"

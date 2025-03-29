@@ -13,7 +13,7 @@ def run_one(
     procedure: Gimp.Procedure,
     run_mode: Gimp.RunMode,
     image: Gimp.Image,
-    drawable: Gimp.Drawable,
+    drawable: Gimp.Layer,
     config: Gimp.ProcedureConfig,
     data,
 ):
