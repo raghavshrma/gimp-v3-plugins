@@ -76,6 +76,7 @@ class UniversalCopy(Gimp.PlugIn):
         procedure.set_sensitivity_mask(
             Gimp.ProcedureSensitivityMask.DRAWABLE
             | Gimp.ProcedureSensitivityMask.NO_DRAWABLES
+            | Gimp.ProcedureSensitivityMask.DRAWABLES
         )
         procedure.set_menu_label("Universal Copy")
         procedure.set_attribution("Raghav", "Raghav, Tileset Project", "2025")

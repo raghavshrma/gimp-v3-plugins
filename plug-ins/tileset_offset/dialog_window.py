@@ -53,6 +53,8 @@ def show(binary: str, procedure: Gimp.Procedure, config: Gimp.ProcedureConfig):
     area = dialog.get_content_area()
     area.add(box)
 
+    dialog.fill(["tiles"])
+
     # make dialogue spawn in center of screen
     dialog.set_position(Gtk.WindowPosition.CENTER)
 

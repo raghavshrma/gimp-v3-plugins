@@ -19,12 +19,12 @@ plug_in_proc = "plug-in-tlk-" + plug_in_binary
 
 
 def execute(
-    procedure: Gimp.Procedure,
-    run_mode: Gimp.RunMode,
-    image: Gimp.Image,
-    drawables: list[Gimp.Drawable],
-    config: Gimp.ProcedureConfig,
-    data,
+        procedure: Gimp.Procedure,
+        run_mode: Gimp.RunMode,
+        image: Gimp.Image,
+        drawables: list[Gimp.Drawable],
+        config: Gimp.ProcedureConfig,
+        data,
 ):
     if run_mode == Gimp.RunMode.INTERACTIVE and hasattr(dialog_window, "show"):
         success, ret = dialog_window.show(plug_in_binary, procedure, config)
@@ -52,12 +52,12 @@ def execute(
 
 
 def run_func(
-    procedure: Gimp.Procedure,
-    run_mode: Gimp.RunMode,
-    image: Gimp.Image,
-    drawables: list[Gimp.Drawable],
-    config: Gimp.ProcedureConfig,
-    data,
+        procedure: Gimp.Procedure,
+        run_mode: Gimp.RunMode,
+        image: Gimp.Image,
+        drawables: list[Gimp.Drawable],
+        config: Gimp.ProcedureConfig,
+        data,
 ):
     try:
         return execute(procedure, run_mode, image, drawables, config, data)
@@ -92,6 +92,15 @@ class TilesetOffset(Gimp.PlugIn):
         )
         procedure.add_int_argument(
             "offset-y", "Offset Y", None, 0, 100, 50, GObject.ParamFlags.READWRITE
+        )
+        procedure.add_int_argument(
+            "tiles",
+            "Tiles",
+            "Number of repeating tiles on either side",
+            1,
+            3,
+            2,
+            GObject.ParamFlags.READWRITE
         )
 
         return procedure
