@@ -47,7 +47,7 @@ class Tiler(object):
             self.wid = x2 - x1
             self.hei = y2 - y1
 
-        Gimp.message("Selection size: %d, %d" % (self.wid, self.hei))
+        # Gimp.message("Selection size: %d, %d" % (self.wid, self.hei))
         self.off_x = int(config.get_property("offset-x") * self.wid / 100)
         self.off_y = int(config.get_property("offset-y") * self.hei / 100)
 
@@ -61,7 +61,7 @@ class Tiler(object):
     def tile(self):
         self.tiles_layer = self._create_tiles_layer()
         x, y = self._center_block_pos()
-        Gimp.message("Centering block at %d, %d" % (x, y))
+        # Gimp.message("Centering block at %d, %d" % (x, y))
         self._fill_tiles_layer(x, y)
         self._apply_offset()
         self._final_copy_to_clipboard(x, y)

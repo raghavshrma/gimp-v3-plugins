@@ -4,5 +4,8 @@
     "reportMissingModuleSource": "none"
   },
   "python.analysis.inlayHints.callArgumentNames": "partial",
-  "editor.inlayHints.fontSize": 10
+  "editor.inlayHints.fontSize": 10,
+  "C_Cpp.default.includePath": [
+    
+  ]
 }

@@ -16,6 +16,7 @@ def run_one(
         config: Gimp.ProcedureConfig,
         data):
 
+    image.undo_group_start()
     has_selection = not Gimp.Selection.is_empty(image)
 
     if has_selection:
@@ -43,20 +44,29 @@ def run_one(
 
     for row in range(rows):
         for col in range(cols):
-            x = col * grid_wid + off_x
-            y = row * grid_hei + off_y
+            x = col * grid_wid
+            y = row * grid_hei
 
-            image.select_rectangle(Gimp.ChannelOps.REPLACE, x, y, grid_wid, grid_hei)
-            copied = Gimp.edit_copy([layer])
+            copy = layer.copy()
+            idx = row * cols + col
+            image.insert_layer(copy, group, idx)
 
-            if not copied: continue
+            copy.set_name(f"slice-{row + 1}x{col + 1}")
+            copy.resize(grid_wid, grid_hei, -x, -y)
 
-            new_layer: Gimp.Layer = Gimp.Layer.new(image, f"S_{row}_{col}", grid_wid, grid_hei, Gimp.ImageType.RGBA_IMAGE, 100, Gimp.LayerMode.NORMAL)
-            image.insert_layer(new_layer, group, row * cols + col)
-            new_layer.set_offsets(x, y)
-
-            [floating_sel] = Gimp.edit_paste(new_layer, False)
-            Gimp.floating_sel_anchor(floating_sel)
+            # x = col * grid_wid + off_x
+            # y = row * grid_hei + off_y
+            # image.select_rectangle(Gimp.ChannelOps.REPLACE, x, y, grid_wid, grid_hei)
+            # copied = Gimp.edit_copy([layer])
+            #
+            # if not copied: continue
+            #
+            # new_layer: Gimp.Layer = Gimp.Layer.new(image, f"S_{row}_{col}", grid_wid, grid_hei, Gimp.ImageType.RGBA_IMAGE, 100, Gimp.LayerMode.NORMAL)
+            # image.insert_layer(new_layer, group, row * cols + col)
+            # new_layer.set_offsets(x, y)
+            #
+            # [floating_sel] = Gimp.edit_paste(new_layer, False)
+            # Gimp.floating_sel_anchor(floating_sel)
 
     # check if layer name contains __temp__ and remove it
     if "__temp__" in layer.get_name():

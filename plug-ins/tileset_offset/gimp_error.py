@@ -11,18 +11,18 @@ from gi.repository import GLib
 error_prefix = "Procedure 'tileset-offset'"
 
 
-def _gimp_error(procedure: Gimp.Procedure, status, message: str):
+def _gimp_error(procedure: Gimp.Procedure, status, message: any):
     return procedure.new_return_values(
         status,
         GLib.Error("%s: %s" % (error_prefix, message)),
     )
 
 
-def calling(procedure: Gimp.Procedure, message: str):
+def calling(procedure: Gimp.Procedure, message: any):
     return _gimp_error(procedure, Gimp.PDBStatusType.CALLING_ERROR, message)
 
 
-def execution(procedure: Gimp.Procedure, message: str):
+def execution(procedure: Gimp.Procedure, message: any):
     return _gimp_error(procedure, Gimp.PDBStatusType.EXECUTION_ERROR, message)
 
 
