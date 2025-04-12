@@ -45,6 +45,13 @@ def get_ref_group(image: Gimp.Image, level: int):
 
     return group
 
+def hide_ref_group(image: Gimp.Image, level: int, hide: bool = True):
+    name = f"l{level}-{REF_GROUP_NAME}"
+    group = image.get_layer_by_name(name)
+
+    if group is not None:
+        group.set_visible(not hide)
+
 def new_group(image: Gimp.Image, base_layer: Gimp.Layer, name: str) -> Gimp.GroupLayer:
     existing = image.get_layer_by_name(name)
     if existing:
@@ -97,6 +104,21 @@ def copy(image: Gimp.Image, source: Gimp.Layer, parent: Gimp.GroupLayer | None, 
     image.insert_layer(layer, parent, 0)
     layer.resize(w, h, x, y)
     return layer
+
+def replace(image: Gimp.Image, source: Gimp.Layer, target: Gimp.Layer) -> Gimp.Layer:
+    parent = target.get_parent()
+    layer = source.copy()
+    image.insert_layer(layer, parent, 0)
+    _, off_x, off_y = target.get_offsets()
+    layer.set_offsets(off_x, off_y)
+    name = target.get_name()
+    image.remove_layer(target)
+    layer.set_name(name)
+    return layer
+
+def change_offset(layer: Gimp.Layer, x: int, y: int):
+    _, off_x, off_y = layer.get_offsets()
+    layer.set_offsets(off_x + x, off_y + y)
 
 def merge_down(image: Gimp.Image, layer: Gimp.Layer, merge_type: Gimp.MergeType = Gimp.MergeType.EXPAND_AS_NECESSARY) -> Gimp.Layer:
     return image.merge_down(layer, merge_type)

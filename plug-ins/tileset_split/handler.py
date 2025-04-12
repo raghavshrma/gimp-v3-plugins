@@ -8,20 +8,30 @@ gi.require_version("Gimp", "3.0")
 from gi.repository import Gimp
 import gimp_error, l0_slicing, l1_primary_tiles, l2_corners
 import l3_corners_finalise
-import l4a_singles_hv_raw
+import l4a_singles_hv_raw, l4b_singles_hv_1_tile_raw, l4c_singles_hv_1_tile_final
+import l5a_connector_base_blocks_raw
 
-# OPERATIONS: list[tuple[str, int, str, str, Callable[Gimp.Image, Gimp.Layer, Gimp.ProcedureConfig]]] = [
-#     ("l0-slicing", 0, "L0: Slicing", "Performs slicing on the base sample tileset", l0_slicing.handle),
-#     ("l1-primary-tiles", 1, "L1: Primary Tiles", "Re-offsets the primary tiles", l1_primary_tiles.handle),
-# ]
 OPERATIONS: list[tuple[str, int, str, str]] = [
     ("l0-slicing", 0, "L0: Slicing", "Performs slicing on the base sample tileset"),
     ("l1-primary-tiles", 1, "L1: Primary Tiles", "Re-offsets the primary tiles"),
     ("l2", 2, "L2: Corner Tiles", "Prepare reference tiles for corners"),
     ("l3", 3, "L3: Finalise Corner Tiles", "Finalise corner tiles"),
     ("l4a", 4, "L4a: Singles 1st Ref - H&V", "Singles 1st Reference - (horizontal and vertical)"),
+    ("l4b", 5, "L4b: Singles HV-1 Tile Raw", "Singles - Horizontal and Vertical - 1 Tile Raw offset"),
+    ("l4c", 6, "L4c: Singles HV-1 Tile Final", "Singles - Horizontal and Vertical - 1 Tile Finalise"),
+    ("l5a", 7, "L5a: Connector Base Blocks Raw", "Connector base blocks raw for transparent corners and edges"),
 ]
 
+DICT = {
+    "l0-slicing": l0_slicing.handle,
+    "l1-primary-tiles": l1_primary_tiles.handle,
+    "l2": l2_corners.handle,
+    "l3": l3_corners_finalise.handle,
+    "l4a": l4a_singles_hv_raw.handle,
+    "l4b": l4b_singles_hv_1_tile_raw.handle,
+    "l4c": l4c_singles_hv_1_tile_final.handle,
+    "l5a": l5a_connector_base_blocks_raw.handle,
+}
 # choice.add("L0: Slicing", 0, "Slicing", "Performs slicing on the base sample tileset")
 #         choice.add("L1: Primary Tiles", 1, "Primary Tiles", "Re-offsets the primary tiles")
 
@@ -51,36 +61,12 @@ def run_any(
     image.undo_group_start()
     operation = config.get_property("operation")
 
-    match operation:
-        case "l0-slicing":
-            l0_slicing.handle(image, drawable, config)
+    handler = DICT.get(operation)
+    if not handler:
+        image.undo_group_end()
+        return gimp_error.calling(procedure, "Unknown operation: " + operation)
 
-        case "l1-primary-tiles":
-            l1_primary_tiles.handle(image, drawable, config)
-
-        case "l2":
-            l2_corners.handle(image, drawable, config)
-
-        case "l3":
-            l3_corners_finalise.handle(image, drawable, config)
-
-        case "l4":
-            l4_singles_hv_raw.handle(image, drawable, config)
-
-        case _:
-            image.undo_group_end()
-            return gimp_error.calling(procedure, "Unknown operation: " + operation)
-
-    # for op, _, _, handler in OPERATIONS:
-    #     if op == operation:
-    #         # handler = op[4]
-    #         # handler(image, drawable, config)
-    #         break
-
-    # Add your code here.
-    # Gimp.message("Tileset Split")
-    # l0_handle(image, drawable)
-    # l0_slicing.handle(image, drawable, config)
+    handler(image, drawable, config)
 
     Gimp.displays_flush()
     image.undo_group_end()
