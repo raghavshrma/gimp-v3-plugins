@@ -5,7 +5,6 @@
   },
   "python.analysis.inlayHints.callArgumentNames": "partial",
   "editor.inlayHints.fontSize": 10,
-  "C_Cpp.default.includePath": [
-    
-  ]
+  "C_Cpp.default.includePath": [],
+  "editor.inlayHints.fontFamily": "Helvetica"
 }
