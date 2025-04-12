@@ -7,11 +7,15 @@ gi.require_version("Gimp", "3.0")
 gi.require_version("GimpUi", "3.0")
 
 from gi.repository import Gimp
+from gi.repository import GimpUi
+from gi.repository import GObject
+from gi.repository import Gtk
 import sys
 
-import handler, gimp_error
+import handler
+import gimp_error
 
-plug_in_binary = "copy-selection-as-layer"
+plug_in_binary = "clip-cut-as-layer"
 plug_in_proc = "plug-in-tlk-" + plug_in_binary
 
 
@@ -43,6 +47,7 @@ def execute(
 
     return gimp_error.calling(procedure, "works with one layer.")
 
+
 def run_func(
     procedure: Gimp.Procedure,
     run_mode: Gimp.RunMode,
@@ -54,9 +59,11 @@ def run_func(
     try:
         return execute(procedure, run_mode, image, drawables, config, data)
     except Exception as e:
+        image.undo_group_end()
         return gimp_error.execution(procedure, e)
 
-class CopySelectionAsLayer(Gimp.PlugIn):
+
+class CutSelectionAsLayer(Gimp.PlugIn):
     def do_query_procedures(self):
         return [plug_in_proc]
 
@@ -71,12 +78,12 @@ class CopySelectionAsLayer(Gimp.PlugIn):
             Gimp.ProcedureSensitivityMask.DRAWABLE
             | Gimp.ProcedureSensitivityMask.NO_DRAWABLES
         )
-        procedure.set_menu_label("Copy Selection As Layer")
+        procedure.set_menu_label("Cut Selection as Layer")
         procedure.set_attribution("Raghav", "Raghav, Tileset Project", "2025")
         procedure.add_menu_path("<Image>/Tileset/Clipboard/")
-        procedure.set_documentation("Copy Selection As Layer", None)
+        procedure.set_documentation("Cut Selection as Layer", None)
 
         return procedure
 
 
-Gimp.main(CopySelectionAsLayer.__gtype__, sys.argv)
+Gimp.main(CutSelectionAsLayer.__gtype__, sys.argv)

@@ -8,7 +8,7 @@ gi.require_version("Gimp", "3.0")
 from gi.repository import Gimp
 from gi.repository import GLib
 
-error_prefix="Procedure 'copy-selection-as-layer'"
+error_prefix="Procedure 'clip-copy-as-layer'"
 
 def _gimp_error(procedure: Gimp.Procedure, status, message: str):
     return procedure.new_return_values(
