@@ -11,8 +11,8 @@ def get_dimensions(image: Gimp.Image, drawable: Gimp.Drawable) -> tuple[int, int
     _, g_wid, g_hei = image.grid_get_spacing()
     wid, hei = drawable.get_width(), drawable.get_height()
 
-    rows = int(wid / g_wid)
-    cols = int(hei / g_hei)
+    rows = int(hei / g_hei)
+    cols = int(wid / g_wid)
     return rows, cols
 
 def get_values(config: Gimp.ProcedureConfig, rows: int, cols: int) -> list[bool]:
@@ -58,8 +58,8 @@ def run_one(
     wid, hei = drawable.get_width(), drawable.get_height()
     _, off_x, off_y = drawable.get_offsets()
 
-    rows = int(wid / g_wid)
-    cols = int(hei / g_hei)
+    rows = int(hei / g_hei)
+    cols = int(wid / g_wid)
     values = get_values(config, rows, cols)
 
     Gimp.Selection.none(image)
