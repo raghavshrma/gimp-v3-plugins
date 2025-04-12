@@ -246,6 +246,7 @@ def run_func(
     try:
         return execute(procedure, run_mode, image, drawables, config, data)
     except Exception as e:
+        image.undo_group_end()
         return gimp_error.execution(procedure, e)
 
 class {class_name}(Gimp.PlugIn):
