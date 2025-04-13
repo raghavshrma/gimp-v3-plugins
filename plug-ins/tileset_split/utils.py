@@ -99,6 +99,11 @@ def get_grid_size(image: Gimp.Image) -> int:
     _, grid, _ = image.grid_get_spacing()
     return int(grid)
 
+def get_grid_size_and_factor(image: Gimp.Image) -> tuple[int, int]:
+    grid = get_grid_size(image)
+    factor = grid // 3
+    return grid, factor
+
 def copy(image: Gimp.Image, source: Gimp.Layer, parent: Gimp.GroupLayer | None, w: int, h: int, x: int, y: int) -> Gimp.Layer:
     layer = source.copy()
     image.insert_layer(layer, parent, 0)
@@ -129,3 +134,17 @@ def get_primary(image: Gimp.Image, orientation: Literal["h", "v"]) -> Gimp.Layer
 def get_plus_layer(image: Gimp.Image, orientation: Literal["h", "v"], idx: int = 2) -> Gimp.Layer:
     suffix = "-primary" if idx == 1 else ""
     return find_layer(image, f"l0-{orientation}-{idx}{suffix}")
+
+def get_singles_layer(image: Gimp.Image, orientation: Literal["h", "v"], idx: int = 1) -> Gimp.Layer:
+    name = f"l4-singles-{orientation}-{idx}"
+    return find_layer(image, name)
+
+def select_area(layer: Gimp.Layer, x: int, y: int, w: int, h: int):
+    image = layer.get_image()
+    _, off_x, off_y = layer.get_offsets()
+    image.select_rectangle(Gimp.ChannelOps.REPLACE, x + off_x, y + off_y, w, h)
+
+def clear_area(layer: Gimp.Layer, x: int, y: int, w: int, h: int):
+    select_area(layer, x, y, w, h)
+    layer.edit_clear()
+    Gimp.Selection.none(layer.get_image())
