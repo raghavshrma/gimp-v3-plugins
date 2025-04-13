@@ -9,7 +9,7 @@ from gi.repository import Gimp
 import gimp_error, l0_slicing, l1_primary_tiles, l2_corners
 import l3_corners_finalise
 import l4a_singles_hv_raw, l4b_singles_hv_1_tile_raw, l4c_singles_hv_1_tile_final
-import l5a_connector_base_blocks_raw
+import l5a_connector_base_blocks_raw, l5b_connector_refs
 
 OPERATIONS: list[tuple[str, int, str, str]] = [
     ("l0-slicing", 0, "L0: Slicing", "Performs slicing on the base sample tileset"),
@@ -20,6 +20,7 @@ OPERATIONS: list[tuple[str, int, str, str]] = [
     ("l4b", 5, "L4b: Singles HV-1 Tile Raw", "Singles - Horizontal and Vertical - 1 Tile Raw offset"),
     ("l4c", 6, "L4c: Singles HV-1 Tile Final", "Singles - Horizontal and Vertical - 1 Tile Finalise"),
     ("l5a", 7, "L5a: Connector Base Blocks Raw", "Connector base blocks raw for transparent corners and edges"),
+    ("l5b", 8, "L5b: Connector Refs", "Connector references and raw"),
 ]
 
 DICT = {
@@ -31,6 +32,7 @@ DICT = {
     "l4b": l4b_singles_hv_1_tile_raw.handle,
     "l4c": l4c_singles_hv_1_tile_final.handle,
     "l5a": l5a_connector_base_blocks_raw.handle,
+    "l5b": l5b_connector_refs.handle,
 }
 # choice.add("L0: Slicing", 0, "Slicing", "Performs slicing on the base sample tileset")
 #         choice.add("L1: Primary Tiles", 1, "Primary Tiles", "Re-offsets the primary tiles")

@@ -4,6 +4,7 @@ gi.require_version("Gimp", "3.0")
 from gi.repository import Gimp
 import utils
 
+
 class Area:
     def __init__(self, x: int, y: int, w: int, h: int):
         self.x = x
@@ -17,6 +18,7 @@ class Area:
 
         layer.resize(self.w, self.h, -self.x, -self.y)
         layer.resize(wid, hei, self.x, self.y)
+
 
 class TilesetBase:
     def __init__(self, image: Gimp.Image, cols: int, rows: int):
@@ -51,6 +53,9 @@ class TilesetBase:
         x, y = _get_coord(index, self.cols, self.grid)
         return x + self.off_x, y + self.off_y
 
+    def get_index(self, col: int, row: int) -> int:
+        return (row - 1) * self.cols + col
+
 
 class TilesetSource(TilesetBase):
     """
@@ -84,6 +89,21 @@ class TilesetSource(TilesetBase):
 
         return copy
 
+    def copy2(self, col: int, row: int) -> Gimp.Layer:
+        index = self.get_index(col, row)
+        return self.copy(index)
+
+    def copy_block(self, index: int, cols: int, rows: int):
+        index -= 1
+        self.validate_index(index)
+        x, y = self.get_local_coord(index)
+        copy = utils.copy(self.image, self.layer, self.default_parent, self.grid * cols, self.grid * rows, -x, -y)
+        return copy
+
+    def copy_block2(self, col: int, row: int, cols: int, rows: int):
+        index = self.get_index(col, row)
+        return self.copy_block(index, cols, rows)
+
     def copy_area(self, index: int, x: int, y: int, w: int, h: int) -> Gimp.Layer:
         copy = self.copy(index)
         copy.resize(w, h, -x, -y)
@@ -94,9 +114,6 @@ class TilesetSource(TilesetBase):
         copy = self.copy(index)
         area.crop(copy)
         return copy
-
-    def copy_block(self, index: int, cols: int, rows: int):
-        pass
 
 
 class TilesetTarget(TilesetBase):
@@ -135,19 +152,112 @@ class TilesetTarget(TilesetBase):
         layer.set_offsets(x, y)
 
     def add_at(self, layer: Gimp.Layer, index: int) -> Gimp.Layer:
+        return self.add(index, layer)
+
+    def add(self, index: int, layer: Gimp.Layer):
         """
         Add a tile to the target layer.
-        :param layer: Layer to add.
         :param index: Index of the tile to add. ranges from 1 to total_tiles
+        :param layer: Layer to add.
         """
         self.move_to(layer, index)
         self.layer = utils.merge_down(self.image, layer)
+        return self.layer
+
+    def add2(self, col: int, row: int, layer: Gimp.Layer):
+        index = (row - 1) * self.cols + col
+        return self.add(index, layer)
+
+    def add_all(self, col: int, row: int, layers: list[Gimp.Layer]):
+        index = (row - 1) * self.cols + col
+        for layer in layers:
+            self.add(index, layer)
+
         return self.layer
 
     def add_from(self, source: TilesetSource, source_index: int, target_index: int):
         # Gimp.active
         layer = source.copy(source_index, self.default_parent)
         self.add_at(layer, target_index)
+
+class TilesetTargetGroup(TilesetBase):
+    """
+    Class to handle tileset blocks.
+    """
+
+    def __init__(self, image: Gimp.Image, name: str, parent: Gimp.GroupLayer | None, cols: int, rows: int, x: int,
+                 y: int, allow_replacement: bool = False):
+        super().__init__(image, cols, rows)
+        self.off_x = x
+        self.off_y = y
+
+        group = image.get_layer_by_name(name)
+        if group is not None:
+            if not allow_replacement:
+                raise ValueError(f"Layer '{name}' already exists. Use allow_replacement=True to replace it.")
+
+            image.remove_layer(group)
+
+        # layer = Gimp.Layer.new(image, name, self.wid, self.hei, Gimp.ImageType.RGBA_IMAGE, 1.0, Gimp.LayerMode.NORMAL)
+        group = Gimp.GroupLayer.new(image, name)
+        image.insert_layer(group, parent, 0)
+        # group.set_offsets(x, y)
+        self.group = group
+        self.default_parent = group
+
+    def move_to(self, layer: Gimp.Layer, index: int):
+        """
+        Move a tile to the target layer.
+        :param layer: Layer to move.
+        :param index: Index of the tile to move. ranges from 1 to total_tiles
+        """
+        index -= 1
+        self.validate_index(index)
+        x, y = self.get_image_coord(index)
+        layer.set_offsets(x, y)
+
+    def add_at(self, layer: Gimp.Layer, index: int) -> Gimp.Layer:
+        return self.add(index, layer)
+
+    def add(self, index: int, layer: Gimp.Layer):
+        """
+        Add a tile to the target layer.
+        :param index: Index of the tile to add. ranges from 1 to total_tiles
+        :param layer: Layer to add.
+        """
+        self.move_to(layer, index)
+        return self.group
+
+    def add2(self, col: int, row: int, layers: Gimp.Layer | list[Gimp.Layer]):
+        index = (row - 1) * self.cols + col
+        if isinstance(layers, list):
+            for l in layers:
+                self.add(index, l)
+        else:
+            self.add(index, layers)
+
+        return self.group
+
+    def add_all(self, col: int, row: int, layers: list[Gimp.Layer]):
+        index = (row - 1) * self.cols + col
+        for layer in layers:
+            self.add(index, layer)
+
+        return self.group
+
+    def add_from(self, source: TilesetSource, source_index: int, target_index: int):
+        # Gimp.active
+        layer = source.copy(source_index, None, self.group)
+        self.add_at(layer, target_index)
+
+    def finalise(self) -> Gimp.Layer:
+        result = self.group.merge()
+        self.group = None
+
+        _, x0, y0 = result.get_offsets()
+        x1, y1 = self.off_x, self.off_y
+        result.resize(self.wid, self.hei, x0 - x1, y0 - y1)
+        return result
 
 
 

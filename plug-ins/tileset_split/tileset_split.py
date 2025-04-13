@@ -54,6 +54,7 @@ def run_func(
         return execute(procedure, run_mode, image, drawables, config, data)
     except Exception as e:
         image.undo_group_end()
+        Gimp.message(str(e.with_traceback(None)))
         return gimp_error.execution(procedure, e)
 
 class TilesetSplit(Gimp.PlugIn):
