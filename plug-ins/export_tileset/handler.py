@@ -114,14 +114,33 @@ def _add_spacing(image: Gimp.Image, source_layer: Gimp.Layer, grid: int, spacing
             nx = x + (col * spacing)
             ny = y + (row * spacing)
 
-            _copy_block(image, source_layer, x, y, final_layer, nx, ny, grid)
+            # _copy_block(image, source_layer, x, y, final_layer, nx, ny, grid)
+            copy = _copy_block3(image, source_layer, col, row, grid)
+            copy.set_offsets(nx, ny)
 
             if fill_spacing:
                 _fill_space_pixels2(image, final_layer, nx, ny, grid, spacing)
 
+        # source_layer.set_visible(False)
+        # final_layer = image.merge_visible_layers(Gimp.MergeType.CLIP_TO_IMAGE)
+        # source_layer.set_visible(True)
+
     time = Gimp.debug_timer_end()
     Gimp.message(f"Prepared spaced tileset in: {time}s")
     source_layer.set_visible(False)
+
+
+def _copy_block3(
+        image: Gimp.Image,
+        source: Gimp.Layer,
+        col: int,
+        row: int,
+        grid: int,
+):
+    copy = source.copy()
+    image.insert_layer(copy, None, 0)
+    copy.resize(grid, grid, -col * grid, -row * grid)
+    return copy
 
 
 def _copy_block(

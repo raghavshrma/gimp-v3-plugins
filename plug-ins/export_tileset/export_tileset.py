@@ -86,7 +86,7 @@ class ExportTileset(Gimp.PlugIn):
         procedure.set_documentation("Export Tileset", None)
 
         procedure.add_boolean_argument("hq-export", "Export HQ", None, True, GObject.ParamFlags.READWRITE)
-        procedure.add_int_argument("hq-spacing", "Spacing", None, 0, 16, 6, GObject.ParamFlags.READWRITE)
+        procedure.add_int_argument("hq-spacing", "Spacing", None, 0, 96, 6, GObject.ParamFlags.READWRITE)
         procedure.add_boolean_argument("hq-fill-spacing", "Fill Spacing", "Keep disabled for quick exports", False, GObject.ParamFlags.READWRITE)
 
         procedure.add_boolean_argument("lq-export", "Export LQ", None, True, GObject.ParamFlags.READWRITE)
