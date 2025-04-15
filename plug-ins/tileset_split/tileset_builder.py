@@ -26,6 +26,7 @@ class Builder:
         self.src_single_v: None | TilesetSource = None
         self.src_inner_corners: None | TilesetSource = None
         self.src_outer_corners: None | TilesetSource = None
+        self.src_block_connectors: None | TilesetSource = None
 
         self.grid = utils.get_grid_size(image)
 
@@ -64,6 +65,40 @@ class Builder:
         target_group = TilesetTargetGroup(self.image, name, self.parent, cols, rows, x, y, True)
         self.set_temp_parent(target_group.group)
         return target_group
+
+    # region Center Tiles
+
+    def center_dark(self):
+        return self.src_sample.copy_index(21)
+
+    def center_light(self):
+        return self.src_sample.copy_index(21)
+
+    def deep_top(self):
+        return self.src_sample.copy(3, 3)
+
+    def deep_bottom(self):
+        return self.src_sample.copy(3, 5)
+
+    def deep_left(self):
+        return self.src_sample.copy(2, 4)
+
+    def deep_right(self):
+        return self.src_sample.copy(5, 4)
+
+    def deep_corner_tl(self):
+        return self.src_sample.copy(2, 3)
+
+    def deep_corner_tr(self):
+        return self.src_sample.copy(5, 3)
+
+    def deep_corner_bl(self):
+        return self.src_sample.copy(2, 5)
+
+    def deep_corner_br(self):
+        return self.src_sample.copy(5, 5)
+
+    # endregion
 
     #region Block Plus
 
@@ -187,36 +222,15 @@ class Builder:
 
     # endregion
 
-    #region Center Tiles
+    #region Block Connector
 
-    def center_dark(self):
-        return self.src_sample.copy_index(21)
+    def setup_block_connectors(self):
+        self.src_block_connectors = self._init_source("l5-block-connectors")
 
-    def center_light(self):
-        return self.src_sample.copy_index(21)
+    def block_connector(self, block_type: int, index: int) -> Gimp.Layer:
+        block_type -= 1
+        index -= 1
+        col = 2 * (block_type % 2) + (index % 2) + 1
+        row = 2 * (block_type // 2) + (index // 2) + 1
 
-    def deep_top(self):
-        return self.src_sample.copy(3, 3)
-
-    def deep_bottom(self):
-        return self.src_sample.copy(3, 5)
-
-    def deep_left(self):
-        return self.src_sample.copy(2, 4)
-
-    def deep_right(self):
-        return self.src_sample.copy(5, 4)
-
-    def deep_corner_tl(self):
-        return self.src_sample.copy(2, 3)
-
-    def deep_corner_tr(self):
-        return self.src_sample.copy(5, 3)
-
-    def deep_corner_bl(self):
-        return self.src_sample.copy(2, 5)
-
-    def deep_corner_br(self):
-        return self.src_sample.copy(5, 5)
-
-    #endregion
+        return self.src_block_connectors.copy(col, row)

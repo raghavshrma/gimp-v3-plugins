@@ -70,6 +70,14 @@ def find_group(image: Gimp.Image, name: str) -> Gimp.Layer:
         raise Exception(f"Layer '{name}' is not a group layer")
     return group
 
+def find_or_create_layer(image: Gimp.Image, name: str, cols: int, rows: int, parent: Gimp.GroupLayer | None = None) -> Gimp.Layer:
+    layer = image.get_layer_by_name(name)
+    if layer is None:
+        g = get_grid_size(image)
+        layer = Gimp.Layer.new(image, name, g * cols, g * rows, Gimp.ImageType.RGBA_IMAGE, 1.0, Gimp.LayerMode.NORMAL)
+        image.insert_layer(layer, parent, 0)
+
+    return layer
 
 def find_layer(image: Gimp.Image, name: str, allow_none: bool = False) -> Gimp.Layer | None:
     layer = image.get_layer_by_name(name)

@@ -10,16 +10,20 @@ from datetime import datetime
 
 def handle(image: Gimp.Image, sample: Gimp.Layer, config: Gimp.ProcedureConfig):
     builder = Builder(image, sample)
+    builder.parent.set_visible(True)
     g = utils.get_grid_size(image)
     x, y = 6 * g, 5 * g
     dx, dy = 6 * g, 5 * g
 
     start = datetime.now()
 
+    utils.find_or_create_layer(image, "l5-block-connectors", 4, 8, utils.get_main_group(image))
+
     builder.setup_blocks_plus()
     builder.setup_block_corners()
     builder.setup_block_singles()
     builder.setup_block_connectors_base()
+    builder.setup_block_connectors()
 
     _build_type_1(builder, 1, x + 0 * dx, y + 0 * dy)
     _build_type_2(builder, 2, x + 1 * dx, y + 0 * dy)
@@ -41,24 +45,28 @@ def _build_type_1(bld: Builder, idx: int, x: int, y: int):
         bld.inner_corner_bl(),
         bld.d(2), bld.d(7),
         bld.c(3), bld.a(1),
+        bld.block_connector(idx, 1),
     ])
 
     t_raw.add(4, 2, [
         bld.inner_corner_br(),
         bld.d(1), bld.d(8),
         bld.c(2), bld.a(1),
+        bld.block_connector(idx, 2),
     ])
 
     t_raw.add(2, 4, [
         bld.inner_corner_tl(),
         bld.d(3), bld.d(6),
         bld.c(3), bld.a(4),
+        bld.block_connector(idx, 3),
     ])
 
     t_raw.add(4, 4, [
         bld.inner_corner_tr(),
         bld.d(4), bld.d(5),
         bld.c(2), bld.a(4),
+        bld.block_connector(idx, 4),
     ])
 
     t_raw.finalise()
@@ -87,24 +95,28 @@ def _build_type_2(bld: Builder, idx: int, x: int, y: int):
         bld.inner_corner_tr(),
         bld.d(2), bld.d(7),
         bld.c(1), bld.a(3),
+        bld.block_connector(idx, 1),
     ])
 
     t_raw.add(4, 2, [
         bld.inner_corner_tl(),
         bld.d(1), bld.d(8),
         bld.c(1), bld.a(2),
+        bld.block_connector(idx, 2),
     ])
 
     t_raw.add(2, 4, [
         bld.inner_corner_br(),
         bld.d(3), bld.d(6),
         bld.c(4), bld.a(3),
+        bld.block_connector(idx, 3),
     ])
 
     t_raw.add(4, 4, [
         bld.inner_corner_bl(),
         bld.d(4), bld.d(5),
         bld.c(4), bld.a(2),
+        bld.block_connector(idx, 4),
     ])
 
     t_raw.finalise()
@@ -133,6 +145,7 @@ def _build_type_3(bld: Builder, idx: int, x: int, y: int):
         bld.c(1), bld.c(2), bld.c(4),
         bld.b(2), bld.b(4),
         bld.a(3),
+        bld.block_connector(idx, 1),
     ])
 
     t_raw.add(4, 2, [
@@ -140,6 +153,7 @@ def _build_type_3(bld: Builder, idx: int, x: int, y: int):
         bld.c(2), bld.c(3), bld.c(4),
         bld.b(3), bld.b(4),
         bld.a(1),
+        bld.block_connector(idx, 2),
     ])
 
     t_raw.add(2, 4, [
@@ -147,6 +161,7 @@ def _build_type_3(bld: Builder, idx: int, x: int, y: int):
         bld.c(1), bld.c(2), bld.c(3),
         bld.b(1), bld.b(2),
         bld.a(4),
+        bld.block_connector(idx, 3),
     ])
 
     t_raw.add(4, 4, [
@@ -154,6 +169,7 @@ def _build_type_3(bld: Builder, idx: int, x: int, y: int):
         bld.c(1), bld.c(3), bld.c(4),
         bld.b(1), bld.b(3),
         bld.a(2),
+        bld.block_connector(idx, 4),
     ])
 
     t_raw.finalise()
@@ -183,6 +199,7 @@ def _build_type_4(bld: Builder, idx: int, x: int, y: int):
         bld.d(2), bld.d(7),
         bld.c(1), bld.c(3),
         bld.b(1), bld.b(2), bld.b(3),
+        bld.block_connector(idx, 1),
     ])
 
     t_raw.add(4, 2, [
@@ -190,6 +207,7 @@ def _build_type_4(bld: Builder, idx: int, x: int, y: int):
         bld.d(1), bld.d(8),
         bld.c(1), bld.c(2),
         bld.b(1), bld.b(2), bld.b(4),
+        bld.block_connector(idx, 2),
     ])
 
     t_raw.add(2, 4, [
@@ -197,6 +215,7 @@ def _build_type_4(bld: Builder, idx: int, x: int, y: int):
         bld.d(3), bld.d(6),
         bld.c(3), bld.c(4),
         bld.b(1), bld.b(3), bld.b(4),
+        bld.block_connector(idx, 3),
     ])
 
     t_raw.add(4, 4, [
@@ -204,6 +223,7 @@ def _build_type_4(bld: Builder, idx: int, x: int, y: int):
         bld.d(4), bld.d(5),
         bld.c(2), bld.c(4),
         bld.b(2), bld.b(3), bld.b(4),
+        bld.block_connector(idx, 4),
     ])
 
     t_raw.finalise()
@@ -239,6 +259,7 @@ def _build_type_5(bld: Builder, idx: int, x: int, y: int):
         bld.d(1), bld.d(2),
         bld.c(1),
         bld.b(1), bld.b(2),
+        bld.block_connector(idx, 4),
     ])
 
     t_raw.add(2, 3, [
@@ -246,6 +267,7 @@ def _build_type_5(bld: Builder, idx: int, x: int, y: int):
         bld.d(3), bld.d(7),
         bld.c(3),
         bld.b(1), bld.b(3),
+        bld.block_connector(idx, 1),
     ])
 
     t_raw.add(4, 3, [
@@ -253,6 +275,7 @@ def _build_type_5(bld: Builder, idx: int, x: int, y: int):
         bld.d(4), bld.d(8),
         bld.c(2),
         bld.b(2), bld.b(4),
+        bld.block_connector(idx, 2),
     ])
 
     t_raw.add(3, 4, [
@@ -260,6 +283,7 @@ def _build_type_5(bld: Builder, idx: int, x: int, y: int):
         bld.d(5), bld.d(6),
         bld.c(4),
         bld.b(3), bld.b(4),
+        bld.block_connector(idx, 3),
     ])
 
     t_raw.finalise()
@@ -291,18 +315,21 @@ def _build_type_6(bld: Builder, idx: int, x: int, y: int):
         bld.inner_corner_tl(),
         bld.d(1), bld.d(3), bld.d(6), bld.d(8),
         bld.b(1), bld.b(4),
+        bld.block_connector(idx, 1),
     ])
 
     t_raw.add(2, 4, [
         bld.inner_corner_tr(),
         bld.d(2), bld.d(4), bld.d(5), bld.d(7),
         bld.b(2), bld.b(3),
+        bld.block_connector(idx, 3),
     ])
 
     t_raw.add(4, 3, [
         bld.inner_corner_tl(),
         bld.c(1), bld.c(2), bld.c(3), bld.c(4),
         bld.b(1), bld.b(2), bld.b(3), bld.b(4),
+        bld.block_connector(idx, 2),
     ])
 
     t_raw.finalise()
@@ -335,10 +362,29 @@ def _build_type_6(bld: Builder, idx: int, x: int, y: int):
 def _build_type_7(bld: Builder, idx: int, x: int, y: int):
     t_raw = bld.target_group_raw(idx, x, y)
 
-    t_raw.add(2, 2, [bld.outer_corner_tl(), bld.c(2), bld.c(4), bld.b(4)])
-    t_raw.add(4, 2, [bld.outer_corner_tr(), bld.c(3), bld.c(4), bld.b(3)])
-    t_raw.add(2, 4, [bld.outer_corner_bl(), bld.c(1), bld.c(2), bld.b(2)])
-    t_raw.add(4, 4, [bld.outer_corner_br(), bld.c(1), bld.c(3), bld.b(1)])
+    t_raw.add(2, 2, [
+        bld.outer_corner_tl(),
+        bld.c(2), bld.c(4), bld.b(4),
+        bld.block_connector(idx, 1),
+    ])
+
+    t_raw.add(4, 2, [
+        bld.outer_corner_tr(),
+        bld.c(3), bld.c(4), bld.b(3),
+        bld.block_connector(idx, 2),
+    ])
+
+    t_raw.add(2, 4, [
+        bld.outer_corner_bl(),
+        bld.c(1), bld.c(2), bld.b(2),
+        bld.block_connector(idx, 3),
+    ])
+
+    t_raw.add(4, 4, [
+        bld.outer_corner_br(),
+        bld.c(1), bld.c(3), bld.b(1),
+        bld.block_connector(idx, 4),
+    ])
     t_raw.finalise()
 
     t_ref = bld.target_group_ref(idx, x, y)
@@ -362,15 +408,18 @@ def _build_type_8(bld: Builder, idx: int, x: int, y: int):
     t_raw.add(1, 2, [
         bld.outer_corner_tl(),
         bld.c(2), bld.a(4),
+        bld.block_connector(idx, 1),
     ])
 
     t_raw.add(3, 2, [
         bld.outer_corner_tr(),
         bld.c(3), bld.a(4),
+        bld.block_connector(idx, 3),
     ])
 
-    t_raw.add(5, 2, bld.single_v())
-    t_raw.add(5, 4, bld.single_v())
+    t_raw.add(5, 1, bld.block_connector(idx - 2, 4))
+    t_raw.add(5, 2, [bld.single_v(), bld.block_connector(idx, 2)])
+    t_raw.add(5, 4, [bld.single_v(), bld.block_connector(idx, 4)])
 
     t_raw.finalise()
 
