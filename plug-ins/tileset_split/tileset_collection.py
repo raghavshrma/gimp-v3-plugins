@@ -71,7 +71,7 @@ class TilesetSource(TilesetBase):
         self.layer = layer
         self.default_parent = parent or layer.get_parent()
 
-    def copy(self, index: int, name: str = None, parent: Gimp.GroupLayer | None = None) -> Gimp.Layer:
+    def copy_index(self, index: int, name: str = None, parent: Gimp.GroupLayer | None = None) -> Gimp.Layer:
         """
         Copy a tile from the base layer to the main group.
         :param index: Index of the tile to copy. ranges from 1 to total_tiles
@@ -89,9 +89,9 @@ class TilesetSource(TilesetBase):
 
         return copy
 
-    def copy2(self, col: int, row: int) -> Gimp.Layer:
+    def copy(self, col: int, row: int) -> Gimp.Layer:
         index = self.get_index(col, row)
-        return self.copy(index)
+        return self.copy_index(index)
 
     def copy_block(self, index: int, cols: int, rows: int):
         index -= 1
@@ -105,13 +105,13 @@ class TilesetSource(TilesetBase):
         return self.copy_block(index, cols, rows)
 
     def copy_area(self, index: int, x: int, y: int, w: int, h: int) -> Gimp.Layer:
-        copy = self.copy(index)
+        copy = self.copy_index(index)
         copy.resize(w, h, -x, -y)
         copy.resize(self.grid, self.grid, x, y)
         return copy
 
     def copy_area2(self, index: int, area: Area) -> Gimp.Layer:
-        copy = self.copy(index)
+        copy = self.copy_index(index)
         area.crop(copy)
         return copy
 
@@ -177,7 +177,7 @@ class TilesetTarget(TilesetBase):
 
     def add_from(self, source: TilesetSource, source_index: int, target_index: int):
         # Gimp.active
-        layer = source.copy(source_index, self.default_parent)
+        layer = source.copy_index(source_index, self.default_parent)
         self.add_at(layer, target_index)
 
 class TilesetTargetGroup(TilesetBase):
@@ -217,9 +217,9 @@ class TilesetTargetGroup(TilesetBase):
         layer.set_offsets(x, y)
 
     def add_at(self, layer: Gimp.Layer, index: int) -> Gimp.Layer:
-        return self.add(index, layer)
+        return self.addi(index, layer)
 
-    def add(self, index: int, layer: Gimp.Layer):
+    def addi(self, index: int, layer: Gimp.Layer):
         """
         Add a tile to the target layer.
         :param index: Index of the tile to add. ranges from 1 to total_tiles
@@ -228,26 +228,26 @@ class TilesetTargetGroup(TilesetBase):
         self.move_to(layer, index)
         return self.group
 
-    def add2(self, col: int, row: int, layers: Gimp.Layer | list[Gimp.Layer]):
+    def add(self, col: int, row: int, layers: Gimp.Layer | list[Gimp.Layer]):
         index = (row - 1) * self.cols + col
         if isinstance(layers, list):
             for l in layers:
-                self.add(index, l)
+                self.addi(index, l)
         else:
-            self.add(index, layers)
+            self.addi(index, layers)
 
         return self.group
 
     def add_all(self, col: int, row: int, layers: list[Gimp.Layer]):
         index = (row - 1) * self.cols + col
         for layer in layers:
-            self.add(index, layer)
+            self.addi(index, layer)
 
         return self.group
 
     def add_from(self, source: TilesetSource, source_index: int, target_index: int):
         # Gimp.active
-        layer = source.copy(source_index, None, self.group)
+        layer = source.copy_index(source_index, None, self.group)
         self.add_at(layer, target_index)
 
     def finalise(self) -> Gimp.Layer:
