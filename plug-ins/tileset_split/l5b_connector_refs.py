@@ -17,12 +17,14 @@ def handle(image: Gimp.Image, sample: Gimp.Layer, config: Gimp.ProcedureConfig):
 
     start = datetime.now()
 
-    _build_type_1(builder, 1, x + 0 * dx, y + 0 * dy)
-    _build_type_2(builder, 2, x + 1 * dx, y + 0 * dy)
-    _build_type_3(builder, 3, x + 0 * dx, y + 1 * dy)
-    _build_type_4(builder, 4, x + 1 * dx, y + 1 * dy)
-    _build_type_5(builder, 5, x + 0 * dx, y + 2 * dy)
-    _build_type_6(builder, 6, x + 1 * dx, y + 2 * dy)
+    # _build_type_1(builder, 1, x + 0 * dx, y + 0 * dy)
+    # _build_type_2(builder, 2, x + 1 * dx, y + 0 * dy)
+    # _build_type_3(builder, 3, x + 0 * dx, y + 1 * dy)
+    # _build_type_4(builder, 4, x + 1 * dx, y + 1 * dy)
+    # _build_type_5(builder, 5, x + 0 * dx, y + 2 * dy)
+    # _build_type_6(builder, 6, x + 1 * dx, y + 2 * dy)
+    _build_type_7(builder, 7, x - 1 * dx, y + 1 * dy)
+    _build_type_8(builder, 8, x - 1 * dx, y + 2 * dy)
 
     Gimp.message(f"Built connector references in {datetime.now() - start}")
 
@@ -325,6 +327,58 @@ def _build_type_6(bld: Builder, idx: int, x: int, y: int):
 
     t_ref.add2(2, 5, bld.left())
     t_ref.add2(3, 5, bld.deep_corner_tl())
+
+    t_ref.finalise()
+
+# Single Corners
+def _build_type_7(bld: Builder, idx: int, x: int, y: int):
+    t_raw = bld.target_group_raw(idx, x, y)
+
+    t_raw.add2(2, 2, [bld.outer_corner_tl(), bld.c(2), bld.c(4), bld.b(4)])
+    t_raw.add2(4, 2, [bld.outer_corner_tr(), bld.c(3), bld.c(4), bld.b(3)])
+    t_raw.add2(2, 4, [bld.outer_corner_bl(), bld.c(1), bld.c(2), bld.b(2)])
+    t_raw.add2(4, 4, [bld.outer_corner_br(), bld.c(1), bld.c(3), bld.b(1)])
+    t_raw.finalise()
+
+    t_ref = bld.target_group_ref(idx, x, y)
+
+    t_ref.add2(2, 1, bld.outer_corner_tl_extra())
+    t_ref.add2(3, 1, bld.single_h_full())
+    t_ref.add2(4, 1, bld.outer_corner_tr_extra())
+
+    t_ref.add2(2, 3, [bld.single_v(), bld.inner_corner_tr_extra()])
+    t_ref.add2(4, 3, [bld.single_v(), bld.inner_corner_tl_extra()])
+
+    t_ref.add2(3, 3, bld.single_h_full())
+
+    t_ref.finalise()
+
+# Single Edges
+def _build_type_8(bld: Builder, idx: int, x: int, y: int):
+    t_raw = bld.target_group_raw(idx, x, y)
+
+    t_raw.add_all(1, 2, [
+        bld.outer_corner_tl(),
+        bld.c(2), bld.a(4),
+    ])
+
+    t_raw.add_all(3, 2, [
+        bld.outer_corner_tr(),
+        bld.c(3), bld.a(4),
+    ])
+
+    t_raw.add2(5, 2, bld.single_v())
+    t_raw.add2(5, 4, bld.single_v())
+
+    t_raw.finalise()
+
+    t_ref = bld.target_group_ref(idx, x, y)
+
+    t_ref.add2(1, 1, bld.outer_corner_tl_extra())
+    t_ref.add2(2, 1, bld.single_h_full())
+    t_ref.add2(3, 1, bld.outer_corner_tr_extra())
+
+    t_ref.add2(5, 3, bld.single_v())
 
     t_ref.finalise()
 
