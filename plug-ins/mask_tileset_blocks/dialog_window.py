@@ -17,6 +17,8 @@ def show(binary: str, procedure: Gimp.Procedure, config: Gimp.ProcedureConfig, i
     GimpUi.init(binary)
 
     dialog = GimpUi.ProcedureDialog.new(procedure, config, "Mask Tileset Blocks")
+    dialog.fill(["retain-layer-size"])
+
     rows, cols = handler.get_dimensions(image, drawable)
     values = handler.get_values(config, rows, cols)
 

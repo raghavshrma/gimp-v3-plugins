@@ -89,11 +89,9 @@ def run_one(
     drawable.edit_clear()
     Gimp.Selection.none(image)
 
-    if x2 > x1:
+    retain_layer_size = config.get_property("retain-layer-size")
+    if (not retain_layer_size) and x2 > x1:
         drawable.resize(x2 - x1, y2 - y1, off_x - x1, off_y - y1)
-
-
-    # Gimp.Selection.edit_clear()
 
     image.undo_group_end()
     return gimp_error.success(procedure)

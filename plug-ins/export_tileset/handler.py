@@ -56,8 +56,9 @@ def _export_hq(
     image.undo_disable()
 
     image.grid_set_spacing(grid + spacing, grid + spacing)
-    # layer = image.merge_visible_layers(Gimp.MergeType.CLIP_TO_IMAGE)
-    layer = image.flatten()
+    layer = image.merge_visible_layers(Gimp.MergeType.CLIP_TO_IMAGE)
+    # this changes the background (color-2) to white instead of transparent
+    # layer = image.flatten()
     # other_layers = image.get_layers()
     # for other_layer in other_layers:
     #     if not other_layer.get_visible():
@@ -336,7 +337,9 @@ def _export_lq(
         return gimp_error.calling(procedure, f"Image size {wid}x{hei} not divisible by {scaling}")
 
     image = source_image.duplicate()
-    image.flatten()
+    image.merge_visible_layers(Gimp.MergeType.CLIP_TO_IMAGE)
+    # this changes the background to white (color-2) instead of transparent
+    # image.flatten()
 
     og_interpolation = Gimp.context_get_interpolation()
     Gimp.context_set_interpolation(Gimp.InterpolationType.LINEAR)
