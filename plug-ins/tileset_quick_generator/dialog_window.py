@@ -11,15 +11,22 @@ from gi.repository import GimpUi
 from gi.repository import Gtk
 
 import gimp_error
+from handler import OPERATIONS
+
+STORE_TARGET = GimpUi.IntStore.new(["Outline", "Colors"])
+OPERATION_NAMES = list(map(lambda x: f"{x[0]}: {x[1]}", OPERATIONS))
+STORE_OPERATIONS = GimpUi.IntStore.new(OPERATION_NAMES)
 
 # Change to _show if dialog is interactive
-def _show(binary: str, procedure: Gimp.Procedure, config: Gimp.ProcedureConfig):
+def show(binary: str, procedure: Gimp.Procedure, config: Gimp.ProcedureConfig):
     GimpUi.init(binary)
 
     dialog = GimpUi.ProcedureDialog.new(procedure, config, "Tileset Quick Generator")
-    dialog.fill(None)
 
-    # make dialogue spawn in center of screen
+    area = dialog.get_content_area()
+    area.add(dialog.get_int_radio("target", STORE_TARGET))
+    area.add(dialog.get_int_radio("operation", STORE_OPERATIONS))
+
     dialog.set_position(Gtk.WindowPosition.CENTER)
 
     if dialog.run():

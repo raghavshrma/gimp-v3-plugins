@@ -5,7 +5,7 @@ import gi
 
 gi.require_version("Gimp", "3.0")
 
-from gi.repository import Gimp
+from gi.repository import Gimp, GObject
 import sys
 import handler, gimp_error, dialog_window
 
@@ -73,6 +73,9 @@ class TilesetQuickGenerator(Gimp.PlugIn):
         procedure.set_attribution("Raghav", "Raghav, Tileset Project", "2025")
         procedure.add_menu_path("<Image>/Tileset/Transform/")
         procedure.set_documentation("Tileset Quick Generator", None)
+
+        procedure.add_int_argument("operation", "Operation", None, 0, len(handler.OPERATIONS) - 1, 0, GObject.ParamFlags.READWRITE)
+        procedure.add_int_argument("target", "Target", None, 0, 1, 0, GObject.ParamFlags.READWRITE)
 
         return procedure
 
