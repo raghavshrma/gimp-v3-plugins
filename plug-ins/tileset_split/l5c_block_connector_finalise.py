@@ -10,7 +10,7 @@ from tileset_collection import TilesetSource, TilesetTargetGroup
 def handle(image: Gimp.Image, sample: Gimp.Layer, config: Gimp.ProcedureConfig):
     utils.hide_ref_group(image, 5, False)
     g = utils.get_grid_size(image)
-    x, y = 7 * g, 3 * g
+    x, y = 0 * g, 11 * g
 
     main_group = utils.get_main_group(image)
     target = TilesetTargetGroup(image, "l5-block-connectors", main_group, 4, 8, x, y, True)

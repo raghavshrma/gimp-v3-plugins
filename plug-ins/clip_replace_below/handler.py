@@ -22,7 +22,7 @@ def run_one(
 
     name = drawable.get_name()
     parent = drawable.get_parent()
-    layers: list[Gimp.Layer] = parent.get_children() if parent is not None else []
+    layers: list[Gimp.Layer] = parent.get_children() if parent is not None else image.get_layers()
     target_layer: Gimp.Layer | None = None
     found_match = False
 
@@ -34,11 +34,11 @@ def run_one(
         if layer.get_name() == name:
             found_match = True
 
-    if target_layer.is_group_layer():
-        return gimp_error.execution(procedure, "Cannot merge and replace into group layer.")
-
     if target_layer is None:
         return gimp_error.execution(procedure, "Cannot find target layer to merge and replace into")
+
+    if target_layer.is_group_layer():
+        return gimp_error.execution(procedure, "Cannot merge and replace into group layer.")
 
     if not isinstance(target_layer, Gimp.Layer):
         return gimp_error.execution(procedure, "Target layer is not a layer")

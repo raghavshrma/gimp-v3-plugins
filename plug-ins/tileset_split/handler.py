@@ -10,6 +10,8 @@ import gimp_error, l0_slicing, l1_primary_tiles, l2_corners
 import l3_corners_finalise
 import l4a_singles_hv_raw, l4b_singles_hv_1_tile_raw, l4c_singles_hv_1_tile_final
 import l5a_connector_base_blocks_raw, l5b_connector_refs, l5c_block_connector_finalise
+import l6a_slope_refs, l6b_slope_refs, l6c_slope_refs
+import l9_consolidate_tileset
 
 OPERATIONS: list[tuple[str, int, str, str]] = [
     ("l0-slicing", 0, "L0: Slicing", "Performs slicing on the base sample tileset"),
@@ -22,6 +24,10 @@ OPERATIONS: list[tuple[str, int, str, str]] = [
     ("l5a", 7, "L5a: Block Connector Base", "Connector base blocks raw for transparent corners and edges"),
     ("l5b", 8, "L5b: Block Connector Refs", "Connector references and raw"),
     ("l5c", 9, "L5c: Block Connector Finalise", "Finalise block connectors"),
+    ("l6a", 10, "L6a: Slope Refs", "Slope Tile Refs A"),
+    ("l6b", 11, "L6b: Slope Refs", "Slope Tile Refs B"),
+    ("l6c", 12, "L6c: Slope Refs", "Slope Tile Refs C"),
+    ("l9", 99, "L9: Consolidate Tileset", "Consolidate tileset"),
 ]
 
 DICT = {
@@ -35,9 +41,11 @@ DICT = {
     "l5a": l5a_connector_base_blocks_raw.handle,
     "l5b": l5b_connector_refs.handle,
     "l5c": l5c_block_connector_finalise.handle,
+    "l6a": l6a_slope_refs.handle,
+    "l6b": l6b_slope_refs.handle,
+    "l6c": l6c_slope_refs.handle,
+    "l9": l9_consolidate_tileset.handle,
 }
-# choice.add("L0: Slicing", 0, "Slicing", "Performs slicing on the base sample tileset")
-#         choice.add("L1: Primary Tiles", 1, "Primary Tiles", "Re-offsets the primary tiles")
 
 def run_any(
         procedure: Gimp.Procedure,
