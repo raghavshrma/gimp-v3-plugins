@@ -1,27 +1,23 @@
-import gi
-
-gi.require_version("Gimp", "3.0")
-from gi.repository import Gimp
-
 import utils
 from generator_config import GeneratorConfig
 from tileset_builder import Builder, BuilderSet
-from tileset_collection import TilesetSource
+from tileset_collection import TilesetTargetGroup
 
 
 def handle(config: GeneratorConfig):
     s = BuilderSet(config)
     s.initiate_level(1)
     s.setup(_setup_sources)
+    s.set_target_size(3, 3)
 
     s.set_target_spacing(1, 5, 1, 4)
-    h1 = _build_edges_h(s)
+    _build_h(s)
 
     s.set_target_spacing(9, 5, 4, 1, False)
-    v1 = _build_edges_v(s)
+    _build_v(s)
 
     s.set_target_spacing(9, 1, 4, 4, True)
-    _build_edge_refs(s, h1, v1)
+    _build_refs(s)
 
     s.cleanup()
 
@@ -31,55 +27,60 @@ def _setup_sources(src: Builder):
     src.custom_source("l1-edge-h-seamless")
     src.custom_source("l1-edge-v-seamless")
 
+    if not src.is_color_source:
+        src.setup_empty()
 
-def _build_edges_h(s: BuilderSet):
-    src = s.outlines.src_custom["l1-edge-h-seamless"]
-    trg = s.create_target("edge-h-1", 3, 3)
-    trg.add(1, 1, src.copy_block2(1, 1, 3, 3))
-    layer = trg.finalize()
-    g = s.grid
-    layer.resize(g, 3 * g, -g, 0)
-    utils.offset_wrap(layer, s.grid // 2, 0)
-    layer.resize(3 * g, 3 * g, g, 0)
+
+def _build_h(s: BuilderSet):
+    def _first(t: TilesetTargetGroup, src: Builder):
+        key = "l1-edge-h-seamless"
+        t.add(1, 1, src.copy_block_custom(key, 1, 1, 3, 3))
+
+    def _nth(t: TilesetTargetGroup, src: Builder, index: int):
+        t.add(2, 1, src.sample_edge_top_full(index))
+        t.add(2, 3, src.sample_edge_bottom(index))
+
+    h1 = s.build3("edge-h-1", _first)
+    utils.seamless_offset_h(h1, s.grid)
 
     for i in range(2, 7):
-        trg = s.create_target(f"edge-h-{i}", 3, 3)
-        trg.add(2, 1, s.outlines.sample_edge_top_full(i))
-        trg.add(2, 3, s.outlines.sample_edge_bottom(i))
-        trg.finalize()
-
-    return layer
+        s.build3(f"edge-h-{i}", lambda t, src: _nth(t, src, i))
 
 
-def _build_edges_v(s: BuilderSet):
-    src = s.outlines.src_custom["l1-edge-v-seamless"]
-    trg = s.create_target("edge-v-1", 3, 3)
-    trg.add(1, 1, src.copy_block2(1, 1, 3, 3))
-    layer = trg.finalize()
-    g = s.grid
-    layer.resize(3 * g, g, 0, -g)
-    utils.offset_wrap(layer, 0, s.grid // 2)
-    layer.resize(3 * g, 3 * g, 0, g)
+def _build_v(s: BuilderSet):
+    def _first(t: TilesetTargetGroup, src: Builder):
+        key = "l1-edge-v-seamless"
+        t.add(1, 1, src.copy_block_custom(key, 1, 1, 3, 3))
+
+    def _nth(t: TilesetTargetGroup, src: Builder, index: int):
+        t.add(1, 2, src.sample_edge_left(index))
+        t.add(2, 2, src.deep_dark())
+        t.add(3, 2, src.sample_edge_right(index))
+
+    v1 = s.build3("edge-v-1", _first)
+    utils.seamless_offset_v(v1, s.grid)
 
     for i in range(2, 6):
-        trg = s.create_target(f"edge-v-{i}", 3, 3)
-        trg.add(1, 2, s.outlines.sample_edge_left(i))
-        trg.add(2, 2, s.outlines.deep_dark())
-        trg.add(3, 2, s.outlines.sample_edge_right(i))
-        trg.finalize()
-
-    return layer
+        s.build3(f"edge-v-{i}", lambda t, src: _nth(t, src, i))
 
 
-def _build_edge_refs(s: BuilderSet, h1: Gimp.Layer, v1: Gimp.Layer):
-    trg = s.create_target("edge-h-ref", 3, 3)
-    h_source = TilesetSource(s.image, h1, trg.group)
-    trg.add(1, 1, h_source.copy_block2(2, 1, 1, 3))
-    trg.add(3, 1, h_source.copy_block2(2, 1, 1, 3))
-    trg.finalize()
+def _build_refs(s: BuilderSet):
+    s.setup(_setup_ref_sources)
 
-    trg = s.create_target("edge-v-ref", 3, 3)
-    v_source = TilesetSource(s.image, v1, trg.group)
-    trg.add(1, 1, v_source.copy_block2(1, 2, 3, 1))
-    trg.add(1, 3, v_source.copy_block2(1, 2, 3, 1))
-    trg.finalize()
+    def _h_ref(t: TilesetTargetGroup, src: Builder):
+        key = "l1-edge-h-1"
+        t.add(1, 1, src.copy_block_custom(key, 2, 1, 1, 3))
+        t.add(3, 1, src.copy_block_custom(key, 2, 1, 1, 3))
+
+    def _v_ref(t: TilesetTargetGroup, src: Builder):
+        key = "l1-edge-v-1"
+        t.add(2, 1, src.copy_block_custom(key, 1, 2, 3, 1))
+        t.add(2, 3, src.copy_block_custom(key, 1, 2, 3, 1))
+
+    s.build3("edge-h-ref", _h_ref, True)
+    s.build3("edge-v-ref", _v_ref, True)
+
+
+def _setup_ref_sources(src: Builder):
+    src.custom_source("l1-edge-h-1")
+    src.custom_source("l1-edge-v-1")

@@ -1,0 +1,57 @@
+from generator_config import GeneratorConfig
+from tileset_builder import Builder, BuilderSet
+from tileset_collection import TilesetSource, TilesetTargetGroup
+
+def handle(config: GeneratorConfig):
+    s = BuilderSet(config)
+    s.initiate_level(2, [1])
+    s.setup(_setup_sources)
+    s.set_target_size(3, 4)
+    s.set_target_spacing(1, 9, 4, 5)
+
+    _build_outer_corners(s)
+    _build_inner_corners(s)
+
+    s.cleanup()
+
+
+def _setup_sources(src: Builder):
+    src.setup_sample()
+    src.setup_edges()
+
+
+def _build_outer_corners(s: BuilderSet):
+    def _ref(t: TilesetTargetGroup, src: Builder):
+        t.add(2, 1, src.edge_top_full())
+        t.add(2, 4, src.edge_bottom())
+        t.add(1, 3, src.edge_left())
+        t.add(3, 3, src.edge_right())
+
+    def _main(t: TilesetTargetGroup, src: Builder):
+        t.add(1, 1, src.sample_corner_tl_full())
+        t.add(3, 1, src.sample_corner_tr_full())
+        t.add(1, 4, src.sample_corner_bl())
+        t.add(3, 4, src.sample_corner_br())
+
+    s.build3("outer-corners", _main, move=False)
+    s.build3("outer-corners-ref", _ref, fill=True)
+
+
+def _build_inner_corners(s: BuilderSet):
+    def _ref(t: TilesetTargetGroup, src: Builder):
+        t.add(2, 1, src.edge_bottom())
+        t.add(2, 3, src.edge_top_full())
+        t.add(1, 2, src.edge_right())
+        t.add(3, 2, src.edge_left())
+        t.add(1, 3, src.edge_right())
+        t.add(3, 3, src.edge_left())
+
+    def _main(t: TilesetTargetGroup, src: Builder):
+        t.add(1, 1, src.edge_bottom())
+        t.add(3, 1, src.edge_bottom())
+        t.add(1, 4, src.edge_top())
+        t.add(3, 4, src.edge_top())
+
+    s.build3("inner-corners", _main, move=False)
+    s.build3("inner-corners-ref", _ref, fill=True)
+

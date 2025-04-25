@@ -12,12 +12,103 @@ class Area:
         self.w = w
         self.h = h
 
-    def crop(self, layer: Gimp.Layer):
+    def crop(self, layer: Gimp.Layer) -> Gimp.Layer:
         wid = layer.get_width()
         hei = layer.get_height()
 
         layer.resize(self.w, self.h, -self.x, -self.y)
         layer.resize(wid, hei, self.x, self.y)
+        return layer
+
+    @staticmethod
+    def left(g: int, f: int):
+        return Area(0, 0, g - f, g)
+
+    @staticmethod
+    def right(g: int, f: int):
+        return Area(f, 0, g - f, g)
+
+    @staticmethod
+    def top(g: int, f: int):
+        return Area(0, 0, g, g - f)
+
+    @staticmethod
+    def bottom(g: int, f: int):
+        return Area(0, f, g, g - f)
+
+    @staticmethod
+    def top_left(g: int, f: int):
+        s = g - f
+        return Area(0, 0, s, s)
+
+    @staticmethod
+    def top_right(g: int, f: int):
+        s = g - f
+        return Area(f, 0, s, s)
+
+    @staticmethod
+    def bottom_left(g: int, f: int):
+        s = g - f
+        return Area(0, f, s, s)
+
+    @staticmethod
+    def bottom_right(g: int, f: int):
+        s = g - f
+        return Area(f, f, s, s)
+
+
+class AreaBuilder:
+    def __init__(self, grid: int):
+        self.grid = grid
+        self.factor = grid // 3
+
+    def left(self):
+        return Area.left(self.grid, self.factor)
+
+    def right(self):
+        return Area.right(self.grid, self.factor)
+
+    def top(self):
+        return Area.top(self.grid, self.factor)
+
+    def bottom(self):
+        return Area.bottom(self.grid, self.factor)
+
+    def top_left(self):
+        return Area.top_left(self.grid, self.factor)
+
+    def top_right(self):
+        return Area.top_right(self.grid, self.factor)
+
+    def bottom_left(self):
+        return Area.bottom_left(self.grid, self.factor)
+
+    def bottom_right(self):
+        return Area.bottom_right(self.grid, self.factor)
+
+    def t(self):
+        return self.top()
+
+    def b(self):
+        return self.bottom()
+
+    def l(self):
+        return self.left()
+
+    def r(self):
+        return self.right()
+
+    def tl(self):
+        return self.top_left()
+
+    def tr(self):
+        return self.top_right()
+
+    def bl(self):
+        return self.bottom_left()
+
+    def br(self):
+        return self.bottom_right()
 
 
 class TilesetBase:
@@ -31,9 +122,15 @@ class TilesetBase:
         self.total_tiles = self.rows * self.cols
         self.off_x = 0
         self.off_y = 0
+        self.tileset_name = "this tileset"
 
     def validate_index(self, index: int):
-        _validate_index(index, self.cols, self.rows)
+        total_tiles = self.rows * self.cols
+        if index < 0 or index >= total_tiles:
+            raise ValueError(
+                f"Index {index} is out of range for {self.tileset_name}. {total_tiles} tiles available."
+                + f" - {self.rows} rows x {self.cols} cols"
+            )
 
     def get_local_coord(self, index: int) -> tuple[int, int]:
         """
@@ -74,6 +171,7 @@ class TilesetSource(TilesetBase):
 
         super().__init__(image, layer.get_width() // g, layer.get_height() // g)
         self.layer = layer
+        self.tileset_name = layer.get_name()
         self.default_parent = parent or layer.get_parent()
 
     def copy_index(
@@ -172,6 +270,7 @@ class TilesetTarget(TilesetBase):
         image.insert_layer(layer, parent, 0)
         layer.set_offsets(x, y)
         self.layer = layer
+        self.tileset_name = layer.get_name()
         self.default_parent = parent
 
     def move_to(self, layer: Gimp.Layer, index: int):
@@ -249,6 +348,7 @@ class TilesetTargetGroup(TilesetBase):
         image.insert_layer(group, parent, 0)
         # group.set_offsets(x, y)
         self.group = group
+        self.tileset_name = group.get_name()
         self.default_parent = group
 
     def move_to(self, layer: Gimp.Layer, index: int):
@@ -257,6 +357,9 @@ class TilesetTargetGroup(TilesetBase):
         :param layer: Layer to move.
         :param index: Index of the tile to move. ranges from 1 to total_tiles
         """
+        if layer is None:
+            return
+
         index -= 1
         self.validate_index(index)
         x, y = self.get_image_coord(index)
@@ -304,7 +407,6 @@ class TilesetTargetGroup(TilesetBase):
         x1, y1 = self.off_x, self.off_y
         result.resize(self.wid, self.hei, x0 - x1, y0 - y1)
         return result
-
 
 def _validate_index(index: int, cols: int, rows: int):
     total_tiles = rows * cols

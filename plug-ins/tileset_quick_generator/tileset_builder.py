@@ -8,6 +8,15 @@ from tileset_collection import TilesetSource, TilesetTargetGroup
 from generator_config import GeneratorConfig
 from collections.abc import Callable
 
+CONNECTOR_GRID_MAP = {
+    1: [(4, 2), (2, 2), (4, 4), (2, 4)],
+    2: [(2, 4), (4, 4), (2, 2), (4, 2)],
+    3: [(2, 2), (2, 4), (4, 2), (4, 4)],
+    4: [(2, 2), (2, 4), (4, 2), (4, 4)],
+    5: [(4, 3), (3, 4), (3, 2), (2, 3)],
+    6: [(2, 2), (2, 4), (4, 3)],
+}
+
 
 class Builder:
     def __init__(self, config: GeneratorConfig, is_color_source: bool):
@@ -23,25 +32,27 @@ class Builder:
         self.root = config.find_group(root_group_name)
 
         self.src_sample: None | TilesetSource = None
+        self.src_empty: None | TilesetSource = None
         self.src_a: None | TilesetSource = None
         self.src_b: None | TilesetSource = None
         self.src_c: None | TilesetSource = None
         self.src_d1: None | TilesetSource = None
         self.src_d2: None | TilesetSource = None
-        self.src_plus_h: None | TilesetSource = None
-        self.src_plus_v: None | TilesetSource = None
-        self.src_single_h: None | TilesetSource = None
-        self.src_single_v: None | TilesetSource = None
-        self.src_inner_corners: None | TilesetSource = None
-        self.src_outer_corners: None | TilesetSource = None
-        self.src_block_connectors: None | TilesetSource = None
         self.src_edges_h: list[TilesetSource] = []
         self.src_edges_v: list[TilesetSource] = []
+        self.src_inner_corner: None | TilesetSource = None
+        self.src_outer_corner: None | TilesetSource = None
         self.src_singles_h: list[TilesetSource] = []
         self.src_singles_v: list[TilesetSource] = []
+        self.src_single_corners: TilesetSource | None = None
+        self.src_connectors: list[TilesetSource] = []
 
         self.grid = utils.get_grid_size(config.image)
         self.src_custom: dict[str, TilesetSource] = {}
+
+        self.is_empty_allowed = True
+
+        self.setup_empty()
 
     def _init_source(self, layer: str | Gimp.Layer) -> TilesetSource:
         layer = type(layer) == str and f"{self.prefix}{layer}" or layer
@@ -79,18 +90,14 @@ class Builder:
         for layer in self._hidden_list:
             layer.set_visible(False)
 
-    def setup_level_group(self, level: int):
-        name = f"{self.prefix}l{level}"
-        group = utils.ref
-
     def get_target_group(
-        self,
-        name: str,
-        x: int,
-        y: int,
-        cols: int = 5,
-        rows: int = 5,
-        parent: Gimp.GroupLayer | None = None,
+            self,
+            name: str,
+            x: int,
+            y: int,
+            cols: int = 5,
+            rows: int = 5,
+            parent: Gimp.GroupLayer | None = None,
     ) -> TilesetTargetGroup:
         parent = parent or self.target_root or self.root
         target_group = TilesetTargetGroup(
@@ -99,228 +106,382 @@ class Builder:
         self.set_temp_parent(target_group.group)
         return target_group
 
-    @staticmethod
-    def copy(src: TilesetSource, col: int, row: int) -> Gimp.Layer:
+    # region Copy Logics
+
+    def copy(self, src: TilesetSource, col: int, row: int):
         if src is None:
-            return None
+            return self.empty_block(1, 1)
 
         return src.copy(col, row)
 
-    @staticmethod
-    def copy_block(
-        src: TilesetSource, col: int, row: int, cols: int, rows: int
-    ) -> Gimp.Layer:
+    def copy_block(self, src: TilesetSource, col: int, row: int, cols: int, rows: int):
         if src is None:
-            return None
+            return self.empty_block(cols, rows)
 
         return src.copy_block2(col, row, cols, rows)
 
-    @staticmethod
-    def copy_full(src: TilesetSource, col: int, row: int) -> Gimp.Layer:
+    def copy_full(self, src: TilesetSource, col: int, row: int):
         if src is None:
+            return self.empty_block(1, 2)
+
+        return src.copy_block2(col, row - 1, 1, 2)
+
+    def copy_l(self, src: list[TilesetSource], index: int, col: int, row: int):
+        src = utils.element_at(src, index - 1)
+        return self.copy(src, col, row)
+
+    def copy_block_l(self, src: list[TilesetSource], index: int, col: int, row: int, cols: int, rows: int):
+        src = utils.element_at(src, index - 1)
+        return self.copy_block(src, col, row, cols, rows)
+
+    def copy_full_l(self, src: list[TilesetSource], index: int, col: int, row: int):
+        src = utils.element_at(src, index - 1)
+        return self.copy_full(src, col, row)
+
+    def copy_custom(self, key: str, col: int, row: int):
+        return self.copy(self.src_custom.get(key), col, row)
+
+    def copy_block_custom(self, key: str, col: int, row: int, cols: int, rows: int):
+        return self.copy_block(self.src_custom.get(key), col, row, cols, rows)
+
+    # endregion
+
+    # region Empty Tiles
+
+    def setup_empty(self):
+        self.src_empty = self._init_source("empty")
+
+    def empty_block(self, cols: int = 1, rows: int = 1):
+        if not self.is_empty_allowed:
             return None
+        return self.src_empty.copy_block2(1, 1, cols, rows)
 
-        return src.copy_block2(col, row, 1, 2)
+    # endregion
 
-    # region Center Tiles
+    # region Sample Tiles
     def setup_sample(self):
         self.src_sample = self._init_source("sample")
 
     def sample_edge_top_full(self, index: int = 1):
-        return self.copy_full(self.src_sample, 2 + index, 2)
-
-    def sample_edge_top_ext(self, index: int = 1):
-        return self.copy(self.src_sample, 2 + index, 2)
+        return self.copy_full(self.src_sample, 1 + index, 2)
 
     def sample_edge_top(self, index: int = 1):
-        return self.copy(self.src_sample, 2 + index, 3)
+        return self.copy(self.src_sample, 1 + index, 2)
+
+    def sample_edge_top_ext(self, index: int = 1):
+        return self.copy(self.src_sample, 1 + index, 1)
 
     def sample_edge_bottom(self, index: int = 1):
-        return self.copy(self.src_sample, 2 + index, 9)
+        return self.copy(self.src_sample, 1 + index, 8)
 
     def sample_edge_left(self, index: int = 1):
-        return self.copy(self.src_sample, 2, 3 + index)
+        return self.copy(self.src_sample, 1, 2 + index)
 
     def sample_edge_right(self, index: int = 1):
-        return self.copy(self.src_sample, 9, 3 + index)
+        return self.copy(self.src_sample, 8, 2 + index)
 
-    def deep_dark(self):
-        return self.copy(self.src_sample, 4, 5)
+    def sample_corner_tl_full(self):
+        return self.copy_full(self.src_sample, 1, 2)
 
-    def deep_light(self):
-        return self.copy(self.src_sample, 4, 6)
+    def sample_corner_tl_ext(self):
+        return self.copy(self.src_sample, 1, 1)
 
-    def deep_edge_top(self):
-        return self.copy(self.src_sample, 4, 4)
+    def sample_corner_tl(self):
+        return self.copy(self.src_sample, 1, 2)
 
-    def deep_edge_bottom(self):
-        return self.copy(self.src_sample, 4, 8)
+    def sample_corner_tr_full(self):
+        return self.copy_full(self.src_sample, 8, 2)
 
-    def deep_edge_left(self):
-        return self.copy(self.src_sample, 3, 5)
+    def sample_corner_tr_ext(self):
+        return self.copy(self.src_sample, 8, 1)
 
-    def deep_edge_right(self):
-        return self.copy(self.src_sample, 8, 5)
+    def sample_corner_tr(self):
+        return self.copy(self.src_sample, 8, 1)
 
-    def deep_corner_tl(self):
-        return self.copy(self.src_sample, 3, 4)
+    def sample_corner_bl(self):
+        return self.copy(self.src_sample, 1, 8)
 
-    def deep_corner_tr(self):
-        return self.copy(self.src_sample, 8, 4)
-
-    def deep_corner_bl(self):
-        return self.copy(self.src_sample, 3, 8)
-
-    def deep_corner_br(self):
+    def sample_corner_br(self):
         return self.copy(self.src_sample, 8, 8)
 
-    # endregion
+    def sample_single_h(self, index: int = 1):
+        return self.copy(self.src_sample, 1 + index, 10)
 
-    # region Block Plus
+    def sample_single_h_full(self, index: int = 1):
+        return self.copy_full(self.src_sample, 1 + index, 10)
 
-    def setup_block_edges(self):
-        self.src_plus_h = self._init_source(utils.get_plus_layer(self.image, "h", 1))
-        self.src_plus_v = self._init_source(utils.get_plus_layer(self.image, "v", 1))
+    def sample_single_h_ext(self, index: int = 1):
+        return self.copy(self.src_sample, 1 + index, 9)
 
-    def edge_top_full(self) -> Gimp.Layer:
-        return self.src_plus_h.copy_block(2, 1, 2)
+    def sample_single_h_left(self):
+        return self.copy(self.src_sample, 1, 10)
 
-    def edge_top(self) -> Gimp.Layer:
-        return self.src_plus_h.copy_index(5)
+    def sample_single_h_left_full(self):
+        return self.copy_full(self.src_sample, 1, 10)
 
-    def edge_top_extra(self) -> Gimp.Layer:
-        return self.src_plus_h.copy_index(2)
+    def sample_single_h_left_ext(self):
+        return self.copy(self.src_sample, 1, 9)
 
-    def edge_bottom(self) -> Gimp.Layer:
-        return self.src_plus_h.copy_index(8)
+    def sample_single_h_right(self):
+        return self.copy(self.src_sample, 8, 10)
 
-    def edge_left(self) -> Gimp.Layer:
-        return self.src_plus_v.copy_index(4)
+    def sample_single_h_right_full(self):
+        return self.copy_full(self.src_sample, 8, 10)
 
-    def edge_right(self) -> Gimp.Layer:
-        return self.src_plus_v.copy_index(6)
+    def sample_single_h_right_ext(self):
+        return self.copy(self.src_sample, 8, 9)
 
-    # endregion
+    def sample_single_v(self, index: int = 1):
+        return self.copy(self.src_sample, 10, 2 + index)
 
-    # region Variations
+    def sample_single_v_top(self):
+        return self.copy(self.src_sample, 10, 2)
 
-    def setup_variations(self):
-        for i in range(1, 5):
-            plus_h = utils.get_plus_layer(self.image, "h", i)
-            self.src_edges_h.append(self._init_source(plus_h))
-            single_h = utils.get_singles_layer(self.image, "h", i)
-            self.src_singles_h.append(self._init_source(single_h))
+    def sample_single_v_top_full(self):
+        return self.copy_full(self.src_sample, 10, 2)
 
-        for i in range(1, 4):
-            plus_v = utils.get_plus_layer(self.image, "v", i)
-            self.src_edges_v.append(self._init_source(plus_v))
-            single_v = utils.get_singles_layer(self.image, "v", i)
-            self.src_singles_v.append(self._init_source(single_v))
+    def sample_single_v_top_ext(self):
+        return self.copy(self.src_sample, 10, 1)
 
-    def var_top_full(self, index: int):
-        return self.src_edges_h[index - 1].copy_block2(2, 1, 1, 2)
+    def sample_single_v_bottom(self):
+        return self.copy(self.src_sample, 10, 8)
 
-    def var_top(self, index: int):
-        return self.src_edges_h[index - 1].copy(2, 2)
+    def deep_dark(self):
+        return self.copy(self.src_sample, 3, 4)
 
-    def var_bottom(self, index: int):
-        return self.src_edges_h[index - 1].copy(2, 3)
+    def deep_light(self):
+        return self.copy(self.src_sample, 3, 5)
 
-    def var_left(self, index: int):
-        return self.src_edges_v[index - 1].copy(1, 2)
+    def deep_edge_top(self):
+        return self.copy(self.src_sample, 3, 3)
 
-    def var_right(self, index: int):
-        return self.src_edges_v[index - 1].copy(3, 2)
+    def deep_edge_bottom(self):
+        return self.copy(self.src_sample, 3, 7)
 
-    def var_single_h_full(self, index: int):
-        return self.src_singles_h[index - 1].copy_block2(2, 1, 1, 2)
+    def deep_edge_left(self):
+        return self.copy(self.src_sample, 2, 4)
 
-    def var_single_h(self, index: int):
-        return self.src_singles_h[index - 1].copy(2, 2)
+    def deep_edge_right(self):
+        return self.copy(self.src_sample, 7, 4)
 
-    def var_single_v(self, index: int):
-        return self.src_singles_v[index - 1].copy(2, 2)
+    def deep_corner_tl(self):
+        return self.copy(self.src_sample, 2, 3)
 
-    # endregion
+    def deep_corner_tr(self):
+        return self.copy(self.src_sample, 7, 3)
 
-    # region Block Singles
+    def deep_corner_bl(self):
+        return self.copy(self.src_sample, 2, 7)
 
-    def setup_block_singles(self):
-        self.src_single_h = self._init_source(
-            utils.get_singles_layer(self.image, "h", 1)
-        )
-        self.src_single_v = self._init_source(
-            utils.get_singles_layer(self.image, "v", 1)
-        )
+    def deep_corner_br(self):
+        return self.copy(self.src_sample, 7, 7)
 
-    def single_h_full(self) -> Gimp.Layer:
-        return self.src_single_h.copy_block(2, 1, 2)
-
-    def single_h(self) -> Gimp.Layer:
-        return self.src_single_h.copy_index(5)
-
-    def single_v(self) -> Gimp.Layer:
-        return self.src_single_v.copy_index(5)
+    def deep_center_complete(self):
+        return self.copy_block(self.src_sample, 2, 3, 6, 5)
 
     # endregion
 
-    # region Block Corners
+    # region Edges
 
-    def setup_block_corners(self):
-        self.src_inner_corners = self._init_source("l2-inner-corners")
-        self.src_outer_corners = self._init_source("l2-outer-corners")
+    def setup_edges(self):
+        layers = utils.get_group_layer_dict(self.image, f"{self.prefix}l1")
 
-    def inner_corner_tl(self):
-        return self.src_inner_corners.copy(2, 3)
+        for i in range(1, 7):
+            layer = layers[f"{self.prefix}l1-edge-h-{i}"]
+            src = self._init_source(layer)
+            self.src_edges_h.append(src)
 
-    def inner_corner_tr(self):
-        return self.src_inner_corners.copy(1, 3)
+        for i in range(1, 6):
+            layer = layers[f"{self.prefix}l1-edge-v-{i}"]
+            src = self._init_source(layer)
+            self.src_edges_v.append(src)
 
-    def inner_corner_bl(self):
-        return self.src_inner_corners.copy(2, 1)
+    def edge_top_full(self, index: int = 1) -> Gimp.Layer:
+        return self.copy_full_l(self.src_edges_h, index, 2, 2)
 
-    def inner_corner_br(self):
-        return self.src_inner_corners.copy(1, 1)
+    def edge_top(self, index: int = 1) -> Gimp.Layer:
+        return self.copy_l(self.src_edges_h, index, 2, 2)
 
-    def inner_corner_tl_extra(self):
-        return self.src_inner_corners.copy(2, 2)
+    def edge_top_ext(self, index: int = 1) -> Gimp.Layer:
+        return self.copy_l(self.src_edges_h, index, 2, 1)
 
-    def inner_corner_tr_extra(self):
-        return self.src_inner_corners.copy(1, 2)
+    def edge_bottom(self, index: int = 1) -> Gimp.Layer:
+        return self.copy_l(self.src_edges_h, index, 2, 3)
 
-    def outer_corner_tl(self):
-        return self.src_outer_corners.copy(1, 2)
+    def edge_left(self, index: int = 1) -> Gimp.Layer:
+        return self.copy_l(self.src_edges_v, index, 1, 2)
 
-    def outer_corner_tr(self):
-        return self.src_outer_corners.copy(6, 2)
-
-    def outer_corner_bl(self):
-        return self.src_outer_corners.copy(1, 3)
-
-    def outer_corner_br(self):
-        return self.src_outer_corners.copy(6, 3)
-
-    def outer_corner_tl_full(self):
-        return self.src_outer_corners.copy_block2(1, 1, 1, 2)
-
-    def outer_corner_tr_full(self):
-        return self.src_outer_corners.copy_block2(6, 1, 1, 2)
-
-    def outer_corner_tl_extra(self):
-        return self.src_outer_corners.copy(1, 1)
-
-    def outer_corner_tr_extra(self):
-        return self.src_outer_corners.copy(6, 1)
+    def edge_right(self, index: int = 1) -> Gimp.Layer:
+        return self.copy_l(self.src_edges_v, index, 3, 2)
 
     # endregion
 
-    # region Block Connectors Base
-    def setup_block_connectors_base(self):
-        self.src_a = self._init_source("l5-series-a")
-        self.src_b = self._init_source("l5-series-b")
-        self.src_c = self._init_source("l5-series-c")
-        self.src_d1 = self._init_source("l5-series-d1")
-        self.src_d2 = self._init_source("l5-series-d2")
+    # region Corners
+
+    def setup_corners(self):
+        self.src_inner_corner = self._init_source("l2-inner-corners")
+        self.src_outer_corner = self._init_source("l2-outer-corners")
+
+    def in_corner_tl(self):
+        return self.copy(self.src_inner_corner, 3, 4)
+
+    def in_corner_tr(self):
+        return self.copy(self.src_inner_corner, 1, 4)
+
+    def in_corner_bl(self):
+        return self.copy(self.src_inner_corner, 3, 1)
+
+    def in_corner_br(self):
+        return self.copy(self.src_inner_corner, 1, 1)
+
+    def in_corner_tl_full(self):
+        return self.copy_full(self.src_inner_corner, 3, 4)
+
+    def in_corner_tr_full(self):
+        return self.copy_full(self.src_inner_corner, 1, 4)
+
+    def in_corner_tl_ext(self):
+        return self.copy(self.src_inner_corner, 3, 3)
+
+    def in_corner_tr_ext(self):
+        return self.copy(self.src_inner_corner, 1, 3)
+
+    def out_corner_tl(self):
+        return self.copy(self.src_outer_corner, 1, 2)
+
+    def out_corner_tr(self):
+        return self.copy(self.src_outer_corner, 3, 2)
+
+    def out_corner_bl(self):
+        return self.copy(self.src_outer_corner, 1, 4)
+
+    def out_corner_br(self):
+        return self.copy(self.src_outer_corner, 3, 4)
+
+    def out_corner_tl_full(self):
+        return self.copy_full(self.src_outer_corner, 1, 2)
+
+    def out_corner_tr_full(self):
+        return self.copy_full(self.src_outer_corner, 3, 2)
+
+    def out_corner_tl_ext(self):
+        return self.copy(self.src_outer_corner, 1, 1)
+
+    def out_corner_tr_ext(self):
+        return self.copy(self.src_outer_corner, 3, 1)
+
+    # endregion
+
+    # region Singles
+
+    def setup_singles(self, corners: bool = True):
+        layers = utils.get_group_layer_dict(self.image, f"{self.prefix}l3")
+
+        layer = layers[f"{self.prefix}l3-single-h-left"]
+        src = self._init_source(layer)
+        self.src_singles_h.append(src)
+
+        for i in range(1, 7):
+            layer = layers[f"{self.prefix}l3-single-h-{i}"]
+            src = self._init_source(layer)
+            self.src_singles_h.append(src)
+
+        layer = layers[f"{self.prefix}l3-single-h-right"]
+        src = self._init_source(layer)
+        self.src_singles_h.append(src)
+
+        layer = layers[f"{self.prefix}l3-single-v-top"]
+        src = self._init_source(layer)
+        self.src_singles_v.append(src)
+
+        for i in range(1, 6):
+            layer = layers[f"{self.prefix}l3-single-v-{i}"]
+            src = self._init_source(layer)
+            self.src_singles_v.append(src)
+
+        layer = layers[f"{self.prefix}l3-single-v-bottom"]
+        src = self._init_source(layer)
+        self.src_singles_v.append(src)
+
+        if corners:
+            layer = layers[f"{self.prefix}l3-single-corners"]
+            self.src_single_corners = self._init_source(layer)
+
+    def single_h_full(self, index: int = 1) -> Gimp.Layer:
+        return self.copy_full_l(self.src_singles_h, index + 1, 2, 2)
+
+    def single_h_ext(self, index: int = 1) -> Gimp.Layer:
+        return self.copy_l(self.src_singles_h, index + 1, 2, 1)
+
+    def single_h(self, index: int = 1) -> Gimp.Layer:
+        return self.copy_l(self.src_singles_h, index + 1, 2, 2)
+
+    def single_v(self, index: int = 1) -> Gimp.Layer:
+        return self.copy_l(self.src_singles_v, index + 1, 2, 2)
+
+    def single_top_full(self) -> Gimp.Layer:
+        return self.copy_full_l(self.src_singles_v, 1, 2, 2)
+
+    def single_top_ext(self) -> Gimp.Layer:
+        return self.copy_l(self.src_singles_v, 1, 2, 1)
+
+    def single_top(self) -> Gimp.Layer:
+        return self.copy_l(self.src_singles_v, 1, 2, 2)
+
+    def single_bottom(self) -> Gimp.Layer:
+        return self.copy_l(self.src_singles_v, 7, 2, 2)
+
+    def single_left_full(self) -> Gimp.Layer:
+        return self.copy_full_l(self.src_singles_h, 1, 2, 2)
+
+    def single_left_ext(self) -> Gimp.Layer:
+        return self.copy_l(self.src_singles_h, 1, 2, 1)
+
+    def single_left(self) -> Gimp.Layer:
+        return self.copy_l(self.src_singles_h, 1, 2, 2)
+
+    def single_right_full(self) -> Gimp.Layer:
+        return self.copy_full_l(self.src_singles_h, 8, 2, 2)
+
+    def single_right_ext(self) -> Gimp.Layer:
+        return self.copy_l(self.src_singles_h, 8, 2, 1)
+
+    def single_right(self) -> Gimp.Layer:
+        return self.copy_l(self.src_singles_h, 8, 2, 2)
+
+    def single_corner_tl_full(self) -> Gimp.Layer:
+        return self.copy_full(self.src_single_corners, 2, 2)
+
+    def single_corner_tl_ext(self) -> Gimp.Layer:
+        return self.copy(self.src_single_corners, 2, 1)
+
+    def single_corner_tl(self) -> Gimp.Layer:
+        return self.copy(self.src_single_corners, 2, 2)
+
+    def single_corner_tr_full(self) -> Gimp.Layer:
+        return self.copy_full(self.src_single_corners, 4, 2)
+
+    def single_corner_tr_ext(self) -> Gimp.Layer:
+        return self.copy(self.src_single_corners, 4, 1)
+
+    def single_corner_tr(self) -> Gimp.Layer:
+        return self.copy(self.src_single_corners, 4, 2)
+
+    def single_corner_bl(self) -> Gimp.Layer:
+        return self.copy(self.src_single_corners, 2, 4)
+
+    def single_corner_br(self) -> Gimp.Layer:
+        return self.copy(self.src_single_corners, 4, 4)
+
+    # endregion
+
+    # region Transition Tiles
+    def setup_transition_tiles(self):
+        self.src_a = self._init_source("l4-transition-ref-a")
+        self.src_b = self._init_source("l4-transition-ref-b")
+        self.src_c = self._init_source("l4-transition-ref-c")
+        self.src_d1 = self._init_source("l4-transition-ref-d1")
+        self.src_d2 = self._init_source("l4-transition-ref-d2")
 
     def a(self, index: int) -> Gimp.Layer:
         return self.src_a.copy_index(index)
@@ -403,81 +564,94 @@ class Builder:
 
     # endregion
 
-    # region Block Connector
+    # region Connectors
 
-    def setup_block_connectors(self):
-        self.src_block_connectors = self._init_source("l5-block-connectors")
+    def setup_connectors(self):
+        layers = utils.get_group_layer_dict(self.image, f"{self.prefix}l5")
 
-    def block_connector_all(self, block_type: int):
-        block_type -= 1
-        col = 2 * (block_type % 2) + 1
-        row = 2 * (block_type // 2) + 1
+        for i in range(1, 7):
+            layer = layers[f"{self.prefix}l5-connector-{i}"]
+            src = self._init_source(layer)
+            self.src_connectors.append(src)
 
-        return self.src_block_connectors.copy_block2(col, row, 2, 2)
+    def connector(self, c_type: int, index: int):
+        l = CONNECTOR_GRID_MAP[c_type]
+        col, row = l[index - 1]
+        return self.copy_l(self.src_connectors, c_type, col, row)
 
-    def block_connector(self, block_type: int, index: int) -> Gimp.Layer:
-        block_type -= 1
-        index -= 1
-        col = 2 * (block_type % 2) + (index % 2) + 1
-        row = 2 * (block_type // 2) + (index // 2) + 1
+    def connect_1_up_r(self):
+        return self.connector(1, 1)
 
-        return self.src_block_connectors.copy(col, row)
+    def connect_1_up_l(self):
+        return self.connector(1, 2)
 
-    def single_v_top(self):
-        return self.src_block_connectors.copy(4, 7)
+    def connect_1_down_r(self):
+        return self.connector(1, 3)
 
-    def single_v_top_full(self):
-        return self.src_block_connectors.copy_block2(4, 6, 1, 2)
+    def connect_1_down_l(self):
+        return self.connector(1, 4)
 
-    def single_v_top_extra(self):
-        return self.src_block_connectors.copy(4, 6)
+    def connect_2_left_d(self):
+        return self.connector(2, 1)
 
-    def single_v_bottom(self):
-        return self.src_block_connectors.copy(4, 8)
+    def connect_2_right_d(self):
+        return self.connector(2, 2)
 
-    def single_h_left(self):
-        return self.src_block_connectors.copy(3, 7)
+    def connect_2_left_u(self):
+        return self.connector(2, 3)
 
-    def single_h_right(self):
-        return self.src_block_connectors.copy(3, 8)
+    def connect_2_right_u(self):
+        return self.connector(2, 4)
 
-    def single_corner_tl(self):
-        return self.src_block_connectors.copy(1, 7)
+    def connect_3_left(self):
+        return self.connector(3, 1)
 
-    def single_corner_tr(self):
-        return self.src_block_connectors.copy(2, 7)
+    def connect_3_up(self):
+        return self.connector(3, 2)
 
-    def single_corner_bl(self):
-        return self.src_block_connectors.copy(1, 8)
+    def connect_3_down(self):
+        return self.connector(3, 3)
 
-    def single_corner_br(self):
-        return self.src_block_connectors.copy(2, 8)
+    def connect_3_right(self):
+        return self.connector(3, 4)
 
-    def block_connect_5_up(self):
-        return self.block_connector(5, 4)
+    def connect_4_tl(self):
+        return self.connector(4, 1)
 
-    def block_connect_5_down(self):
-        return self.block_connector(5, 3)
+    def connect_4_tr(self):
+        return self.connector(4, 2)
 
-    def block_connect_5_left(self):
-        return self.block_connector(5, 1)
+    def connect_4_bl(self):
+        return self.connector(4, 3)
 
-    def block_connect_5_right(self):
-        return self.block_connector(5, 2)
+    def connect_4_br(self):
+        return self.connector(4, 4)
 
-    def block_connect_3_up(self):
-        return self.block_connector(3, 3)
+    def connect_5_right(self):
+        return self.connector(5, 1)
 
-    def block_connect_3_down(self):
-        return self.block_connector(3, 2)
+    def connect_5_down(self):
+        return self.connector(5, 2)
 
-    def block_connect_3_left(self):
-        return self.block_connector(3, 4)
+    def connect_5_up(self):
+        return self.connector(5, 3)
 
-    def block_connect_3_right(self):
-        return self.block_connector(3, 1)
+    def connect_5_left(self):
+        return self.connector(5, 4)
+
+    def connect_6_tl_br(self):
+        return self.connector(6, 1)
+
+    def connect_6_tr_bl(self):
+        return self.connector(6, 2)
+
+    def connect_6_all(self):
+        return self.connector(6, 3)
 
     # endregion
+
+
+BuildFnType = Callable[[TilesetTargetGroup, Builder], None]
 
 
 class BuilderSet:
@@ -489,15 +663,29 @@ class BuilderSet:
         self.outlines = Builder(config, False)
         self.grid = config.grid
         self.is_color_target = config.is_color_target
-        self.set_target_spacing(0, 0, 6, 6)
         self._orientation_h = True
 
-    def initiate_level(self, level: int, dependencies: list[int] = []):
+        self.level_root: None | Gimp.GroupLayer = None
+        self.level_root_name: None | str = None
+
+        self._x = 0
+        self._y = 0
+        self._cx = 0
+        self._cy = 0
+        self._dx = 0
+        self._dy = 0
+        self._max_z = 0
+        self._cols = 5
+        self._rows = 5
+
+        self.set_target_spacing(0, 0, 6, 6)
+
+    def initiate_level(self, level: int, dependencies: list[int] = None):
         self.level_root = self.config.initiate_level(level, dependencies)
         self.level_root_name = self.level_root.get_name()
         return self.level_root
 
-    def set_target_spacing(self, x: int, y: int, dx: int, dy: int, orient_h: bool = True):
+    def set_target_spacing(self, x: int, y: int, dx: int, dy: int, orient_h: bool = True, per_row: int = 0):
         self._x = x * self.grid
         self._y = y * self.grid
         self._cx = self._x
@@ -508,10 +696,16 @@ class BuilderSet:
         self._orientation_h = orient_h
         if orient_h:
             max_blocks = (self.image.get_width() - self._x) // self._dx
-            self._max_z = self._x + (max_blocks * self._dx)
+            max_blocks = min(max_blocks, per_row) if per_row > 0 else max_blocks
+            self._max_z = self._x + ((max_blocks - 1) * self._dx)
         else:
             max_blocks = (self.image.get_height() - self._y) // self._dy
-            self._max_z = self._y + (max_blocks * self._dy)
+            max_blocks = min(max_blocks, per_row) if per_row > 0 else max_blocks
+            self._max_z = self._y + ((max_blocks - 1) * self._dy)
+
+    def set_target_size(self, cols: int, rows: int):
+        self._cols = cols
+        self._rows = rows
 
     def next_target_position(self):
         if self._orientation_h:
@@ -527,20 +721,29 @@ class BuilderSet:
             else:
                 self._cy += self._dy
 
-    def create_target(self, type: str = None, cols: int = 5, rows: int = 5):
-        target = self.create_target_at(self._cx, self._cy, type, cols, rows)
-        self.next_target_position()
-        return target
+    def next_target_row(self):
+        if self._orientation_h:
+            self._cx = self._x
+            self._cy += self._dy
+        else:
+            self._cy = self._y
+            self._cx += self._dx
 
-    def create_target_at(
-        self, x: int, y: int, type: str = None, cols: int = 5, rows: int = 5
-    ):
-        parent = self.level_root
-        suffix = type and f"-{type}" or ""
-        name = f"{self.level_root_name}{suffix}"
-        target_group = TilesetTargetGroup(
-            self.image, name, parent, cols, rows, x, y, True
-        )
+    def create_target(self, name: str, cols: int = 0, rows: int = 0):
+        return self.create_target_at(self._cx, self._cy, name, cols, rows)
+
+    def create_target_at(self, x: int, y: int, name: str = None, cols: int = 0, rows: int = 0):
+        cols = cols or self._cols
+        rows = rows or self._rows
+
+        if self.level_root is None:
+            name = f"{self.config.prefix}{name}"
+            parent = self.config.setup_root()
+        else:
+            name = f"{self.level_root_name}-{name}"
+            parent = self.level_root
+
+        target_group = TilesetTargetGroup(self.image, name, parent, cols, rows, x, y, True)
         self.colors.set_temp_parent(target_group.group)
         self.outlines.set_temp_parent(target_group.group)
         return target_group
@@ -550,6 +753,29 @@ class BuilderSet:
         if self.is_color_target:
             handler(self.colors)
 
+    def build(self, target: TilesetTargetGroup, fn: BuildFnType, fill: bool = False):
+        if self.is_color_target:
+            fn(target, self.colors)
+            # FIXME: Also enable the lX group of outlines
+        else:
+            if fill:
+                fn(target, self.colors)
+            fn(target, self.outlines)
+
+    def build2(self, target: TilesetTargetGroup, fn: BuildFnType, fill: bool = False, move: bool = True):
+        self.build(target, fn, fill)
+        layer = target.finalize()
+        if move:
+            self.next_target_position()
+        return layer
+
+    def build3(self, name: str, fn: BuildFnType, fill: bool = False, move: bool = True):
+        target = self.create_target(name)
+        return self.build2(target, fn, fill, move)
+
     def cleanup(self):
         self.outlines.cleanup()
         self.colors.cleanup()
+
+    def get_grid_and_factor(self, factor: int = 3):
+        return self.grid, self.grid // factor

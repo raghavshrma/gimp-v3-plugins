@@ -1,9 +1,12 @@
-from typing import Literal
+from typing import Literal, TypeVar
 
 import gi
 
 gi.require_version("Gimp", "3.0")
 from gi.repository import Gimp, Gegl
+from datetime import datetime
+
+T = TypeVar('T')
 
 MAIN_GROUP_NAME = "l0-tiles"
 REF_GROUP_NAME = "ref-tiles"
@@ -167,3 +170,43 @@ def clear_area(layer: Gimp.Layer, x: int, y: int, w: int, h: int):
     select_area(layer, x, y, w, h)
     layer.edit_clear()
     Gimp.Selection.none(layer.get_image())
+
+def get_group_layer_dict(image: Gimp.Image, layer: str | Gimp.GroupLayer) -> dict[str, Gimp.Layer]:
+    layer = type(layer) == str and find_group(image, layer) or layer
+
+    children = layer.get_children()
+    layers_dict = {}
+    for child in children:
+        if isinstance(child, Gimp.Layer):
+            layers_dict[child.get_name()] = child
+
+    return layers_dict
+
+def element_at(arr: list[T], index: int) -> T | None:
+    if len(arr) <= index:
+        return None
+
+    return arr[index]
+
+def seamless_offset_h(layer: Gimp.Layer, grid: int | None = None):
+    g = grid or get_grid_size(layer.get_image())
+    layer.resize(g, 3 * g, -g, 0)
+    offset_wrap(layer, g // 2, 0)
+    layer.resize(3 * g, 3 * g, g, 0)
+
+def seamless_offset_v(layer: Gimp.Layer, grid: int | None = None):
+    g = grid or get_grid_size(layer.get_image())
+    layer.resize(3 * g, g, 0, -g)
+    offset_wrap(layer, 0, g // 2)
+    layer.resize(3 * g, 3 * g, 0, g)
+
+
+class ProcessTimer:
+    def __init__(self):
+        self.start = datetime.now()
+
+    def end(self, msg: str):
+        end = datetime.now()
+        elapsed = end - self.start
+        seconds = round(elapsed.total_seconds(), 1)
+        Gimp.message(f"{msg} took {seconds}s.")

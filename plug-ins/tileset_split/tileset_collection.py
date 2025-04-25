@@ -19,6 +19,42 @@ class Area:
         layer.resize(self.w, self.h, -self.x, -self.y)
         layer.resize(wid, hei, self.x, self.y)
 
+    @staticmethod
+    def left(g: int, f: int):
+        return Area(0, 0, g - f, g)
+
+    @staticmethod
+    def right(g: int, f: int):
+        return Area(f, 0, g - f, g)
+
+    @staticmethod
+    def top(g: int, f: int):
+        Area(0, 0, g, g - f)
+
+    @staticmethod
+    def bottom(g: int, f: int):
+        Area(0, f, g, g - f)
+
+    @staticmethod
+    def top_left(g: int, f: int):
+        s = g - f
+        Area(0, 0, s, s)
+
+    @staticmethod
+    def top_right(g: int, f: int):
+        s = g - f
+        Area(f, 0, s, s)
+
+    @staticmethod
+    def bottom_left(g: int, f: int):
+        s = g - f
+        Area(0, f, s, s)
+
+    @staticmethod
+    def bottom_right(g: int, f: int):
+        s = g - f
+        Area(f, f, s, s)
+
 
 class TilesetBase:
     def __init__(self, image: Gimp.Image, cols: int, rows: int):
@@ -104,10 +140,15 @@ class TilesetSource(TilesetBase):
         index = self.get_index(col, row)
         return self.copy_block(index, cols, rows)
 
-    def copy_area(self, index: int, x: int, y: int, w: int, h: int) -> Gimp.Layer:
+    def copy_area_i(self, index: int, x: int, y: int, w: int, h: int) -> Gimp.Layer:
         copy = self.copy_index(index)
         copy.resize(w, h, -x, -y)
         copy.resize(self.grid, self.grid, x, y)
+        return copy
+
+    def copy_area(self, col: int, row: int, area: Area) -> Gimp.Layer:
+        copy = self.copy(col, row)
+        area.crop(copy)
         return copy
 
     def copy_area2(self, index: int, area: Area) -> Gimp.Layer:

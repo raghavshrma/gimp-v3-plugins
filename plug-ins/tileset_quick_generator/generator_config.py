@@ -19,10 +19,16 @@ class GeneratorConfig:
         self.config = config
 
         self.is_color_target = config.get_property("target") == 1
-        root_group_name = self.is_color_target and "colors" or "outlines"
-        self.root = self.find_group(root_group_name)
         self.prefix = self.is_color_target and "c-" or "o-"
         self.grid = utils.get_grid_size(image)
+        self._root: Gimp.GroupLayer | None = None
+
+    def setup_root(self):
+        if self._root is None:
+            root_group_name = self.is_color_target and "colors" or "outlines"
+            self._root = self.find_group(root_group_name)
+
+        return self._root
 
     def find_group(self, name: str) -> Gimp.GroupLayer:
         return utils.find_group(self.image, name)
@@ -37,9 +43,9 @@ class GeneratorConfig:
 
         return group_dict
 
-    def initiate_level(self, level: int, dependencies: list[int] = []):
+    def initiate_level(self, level: int, dependencies: list[int] = None):
         """
-        - Hides all of the other levels except this level and the dependencies
+        - Hides all the other levels except this level and the dependencies
         - Find or creates the layer group for this target
         """
 
@@ -47,16 +53,23 @@ class GeneratorConfig:
         utils.hide_layer(self.image, other_root_name)
 
         group_name = f"{self.prefix}l{level}"
-        group = utils.find_or_create_group(self.image, group_name, self.root)
-        dependencies = self.get_level_names(dependencies)
-        dependencies.append(group_name)
+        root = self.setup_root()
+        group = utils.find_or_create_group(self.image, group_name, root)
+        dependencies = dependencies or []
+        dependencies.append(level)
+        self.set_visible_levels(dependencies)
 
-        children = self.root.get_children()
+        return group
+
+    def set_visible_levels(self, levels: list[int]):
+        dependencies = self.get_level_names(levels)
+
+        root = self.setup_root()
+        children = root.get_children()
         for child in children:
             visible = child.get_name() in dependencies
             child.set_visible(visible)
-
-        return group
+            child.set_expanded(visible)
 
     def get_level_names(self, levels: list[int]):
         mapper = map(lambda i: self.get_level_name(i), levels)
