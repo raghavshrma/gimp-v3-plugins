@@ -82,6 +82,8 @@ class ToggleGridStyle(Gimp.PlugIn):
         procedure.add_menu_path("<Image>/Tileset/View/")
         procedure.set_documentation("Toggle Grid Style", None)
 
+        procedure.add_int_argument("grid_type", "Grid Type", None, 0, 10, 0, GObject.ParamFlags.READWRITE)
+
         return procedure
 
 

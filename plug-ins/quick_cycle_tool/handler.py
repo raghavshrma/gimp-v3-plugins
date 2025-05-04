@@ -7,22 +7,16 @@ gi.require_version("Gimp", "3.0")
 from gi.repository import Gimp
 import gimp_error
 
-def run_one(
+def run_any(
         procedure: Gimp.Procedure,
         run_mode: Gimp.RunMode,
         image: Gimp.Image,
-        drawable: Gimp.Layer,
         config: Gimp.ProcedureConfig,
         data):
 
-    image.undo_group_start()
+    # index = config.get_property("index")
+    # Gimp.message(f"Index: {index}")
+    # config.set_property("index", index + 1)
 
-    Gimp.edit_cut([drawable])
-    [floating_sel] = Gimp.edit_paste(drawable, False)
-    # image.raise_item_to_top(floating_sel)
-    Gimp.floating_sel_to_layer(floating_sel)
-
-    image.set_selected_layers([drawable])
-
-    image.undo_group_end()
+    Gimp.message("Can't change active tool through script")
     return gimp_error.success(procedure)

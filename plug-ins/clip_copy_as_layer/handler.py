@@ -24,7 +24,7 @@ def run_one(
 
     [floating_sel] = Gimp.edit_paste(drawable, False)
     # Gimp.message("Floating Layer: %s" % floating_sel)
-    image.raise_item_to_top(floating_sel)
+    # image.raise_item_to_top(floating_sel)
     Gimp.floating_sel_to_layer(floating_sel)
 
     image.undo_group_end()
