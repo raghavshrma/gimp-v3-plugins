@@ -34,6 +34,10 @@ BABL_PATH="$r_path/lib/babl-0.1" \
     GI_TYPELIB_PATH="$r_path/lib/girepository-1.0" \
     $python_exec "${dir}/generate_gimp_stubs.py"
 
+# Fix the base enum types of
+# GObject.GFlags() -> GObject.GFlags(enum.Enum) &
+# GObject.GEnum() -> GObject.GEnum(enum.Enum)
+
 # BABL_PATH="$r_path/lib/babl-0.1" \
 #     GI_TYPELIB_PATH="$r_path/lib/girepository-1.0" \
 #     $python_exec stubs/tools/generate.py Gimp 3.0 -u Gimp.pyi

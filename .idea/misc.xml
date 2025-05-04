@@ -4,4 +4,7 @@
     <option name="sdkName" value="Python 3.13 (gimp-v3)" />
   </component>
   <component name="ProjectRootManager" version="2" project-jdk-name="GimpPy (V) 3.10" project-jdk-type="Python SDK" />
+  <component name="PythonCompatibilityInspectionAdvertiser">
+    <option name="version" value="3" />
+  </component>
 </project>
