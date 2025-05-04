@@ -42,12 +42,12 @@ def _build(t: TilesetTargetGroup, src: Builder):
     t.add(10, 1, src.single_top_full())
     t.add(10, 8, src.single_bottom())
 
-    for i in range(1, 7):
+    for i in src.config.range_cols():
         t.add(i + 1, 1, src.edge_top_full(i))
         t.add(i + 1, 8, src.edge_bottom(i))
         t.add(i + 1, 9, src.single_h_full(i))
 
-    for i in range(1, 6):
+    for i in src.config.range_rows():
         t.add(1, i + 2, src.edge_left(i))
         t.add(8, i + 2, src.edge_right(i))
         t.add(10, i + 2, src.single_v(i))

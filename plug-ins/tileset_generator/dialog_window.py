@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import typing
 
 import gi
+from gi.repository.GObject import GObject
 
 gi.require_version("Gimp", "3.0")
 from gi.repository import Gimp
@@ -24,8 +26,20 @@ def show(binary: str, procedure: Gimp.Procedure, config: Gimp.ProcedureConfig):
     dialog = GimpUi.ProcedureDialog.new(procedure, config, "Tileset Quick Generator")
 
     area = dialog.get_content_area()
-    area.add(dialog.get_int_radio("target", STORE_TARGET))
-    area.add(dialog.get_int_radio("operation", STORE_OPERATIONS))
+    main_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+
+    l_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=20)
+    r_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+
+    l_box.add(dialog.get_int_radio("target", STORE_TARGET))
+    l_box.add(dialog.get_widget("quick", Gtk.CheckButton.__gtype__))
+    # l_box.add(dialog.fill_frame("l-box", "LBox", True, "quick"))
+    r_box.add(dialog.get_int_radio("operation", STORE_OPERATIONS))
+
+    main_box.add(l_box)
+    main_box.add(r_box)
+    area.add(main_box)
+    area.show_all()
 
     dialog.set_position(Gtk.WindowPosition.CENTER)
 

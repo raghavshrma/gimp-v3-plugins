@@ -16,6 +16,10 @@ def handle(config: GeneratorConfig):
     s.cleanup()
 
 
+def quick(config: GeneratorConfig):
+    handle(config)
+
+
 def _setup_sources(src: Builder):
     src.setup_corners()
 

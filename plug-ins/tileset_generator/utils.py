@@ -76,11 +76,14 @@ def find_or_create_group(image: Gimp.Image, name: str, parent: Gimp.GroupLayer |
 
     return group
 
-def find_group(image: Gimp.Image, name: str) -> Gimp.GroupLayer:
+def find_group(image: Gimp.Image, name: str, allow_none: bool = False) -> Gimp.GroupLayer | None:
     group = image.get_layer_by_name(name)
     if group is None:
+        if allow_none:
+            return None
+
         raise Exception(f"Layer Group '{name}' not found")
-    if not group.is_group_layer():
+    if not isinstance(group, Gimp.GroupLayer):
         raise Exception(f"Layer '{name}' is not a group layer")
     return group
 
@@ -200,6 +203,15 @@ def seamless_offset_v(layer: Gimp.Layer, grid: int | None = None):
     offset_wrap(layer, 0, g // 2)
     layer.resize(3 * g, 3 * g, 0, g)
 
+def set_visible_layers(image: Gimp.Image, group: str | Gimp.GroupLayer, visible_layers: list[str]):
+    group = type(group) == str and find_group(image, group) or group
+    all_layers = group.get_children() if group else image.get_layers()
+    visible_set = set(visible_layers)
+
+    for layer in all_layers:
+        visible = layer.get_name() in visible_set
+        layer.set_visible(visible)
+        layer.set_expanded(visible)
 
 class ProcessTimer:
     def __init__(self):

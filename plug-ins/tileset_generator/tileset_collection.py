@@ -1,7 +1,7 @@
 import gi
 
 gi.require_version("Gimp", "3.0")
-from gi.repository import Gimp
+from gi.repository import Gimp, Gegl
 import utils
 
 
@@ -58,9 +58,9 @@ class Area:
 
 
 class AreaBuilder:
-    def __init__(self, grid: int):
+    def __init__(self, grid: int, factor: int = 3):
         self.grid = grid
-        self.factor = grid // 3
+        self.factor = grid // factor
 
     def left(self):
         return Area.left(self.grid, self.factor)
@@ -109,6 +109,30 @@ class AreaBuilder:
 
     def br(self):
         return self.bottom_right()
+
+    def mid_seam_top(self):
+        x = self.grid - self.factor
+        y = 0
+        w = self.factor * 2
+        h = self.grid * 2
+
+        return Area(x, y, w, h)
+
+    def mid_seam_vertical(self):
+        x = 0
+        y = self.grid - self.factor
+        w = self.grid
+        h = self.factor * 2
+
+        return Area(x, y, w, h)
+
+    def mid_seam_horizontal(self):
+        x = self.grid - self.factor
+        y = 0
+        w = self.factor * 2
+        h = self.grid
+
+        return Area(x, y, w, h)
 
 
 class TilesetBase:
@@ -160,10 +184,10 @@ class TilesetSource(TilesetBase):
     """
 
     def __init__(
-        self,
-        image: Gimp.Image,
-        layer: Gimp.Layer | str,
-        parent: Gimp.GroupLayer | None = None,
+            self,
+            image: Gimp.Image,
+            layer: Gimp.Layer | str,
+            parent: Gimp.GroupLayer | None = None,
     ):
         g = utils.get_grid_size(image)
         if type(layer) == str:
@@ -175,7 +199,7 @@ class TilesetSource(TilesetBase):
         self.default_parent = parent or layer.get_parent()
 
     def copy_index(
-        self, index: int, name: str = None, parent: Gimp.GroupLayer | None = None
+            self, index: int, name: str = None, parent: Gimp.GroupLayer | None = None
     ) -> Gimp.Layer:
         """
         Copy a tile from the base layer to the main group.
@@ -235,15 +259,15 @@ class TilesetTarget(TilesetBase):
     """
 
     def __init__(
-        self,
-        image: Gimp.Image,
-        name: str,
-        parent: Gimp.GroupLayer | None,
-        cols: int,
-        rows: int,
-        x: int,
-        y: int,
-        allow_replacement: bool = False,
+            self,
+            image: Gimp.Image,
+            name: str,
+            parent: Gimp.GroupLayer | None,
+            cols: int,
+            rows: int,
+            x: int,
+            y: int,
+            allow_replacement: bool = False,
     ):
         super().__init__(image, cols, rows)
         self.off_x = x
@@ -320,15 +344,15 @@ class TilesetTargetGroup(TilesetBase):
     """
 
     def __init__(
-        self,
-        image: Gimp.Image,
-        name: str,
-        parent: Gimp.GroupLayer | None,
-        cols: int,
-        rows: int,
-        x: int,
-        y: int,
-        allow_replacement: bool = False,
+            self,
+            image: Gimp.Image,
+            name: str,
+            parent: Gimp.GroupLayer | None,
+            cols: int,
+            rows: int,
+            x: int,
+            y: int,
+            allow_replacement: bool = False,
     ):
         super().__init__(image, cols, rows)
         self.off_x = x
@@ -350,6 +374,7 @@ class TilesetTargetGroup(TilesetBase):
         self.group = group
         self.tileset_name = group.get_name()
         self.default_parent = group
+        self.fill_layer: None | Gimp.Layer = None
 
     def move_to(self, layer: Gimp.Layer, index: int):
         """
@@ -399,6 +424,36 @@ class TilesetTargetGroup(TilesetBase):
         layer = source.copy_index(source_index, None, self.group)
         self.add_at(layer, target_index)
 
+    def new_fill_layer(self, name: str | None, col: int, row: int, cols: int, rows: int) -> Gimp.Layer:
+        wid = cols * self.grid
+        hei = rows * self.grid
+
+        layer = Gimp.Layer.new(self.image, name, wid, hei, Gimp.ImageType.RGBA_IMAGE, 100, Gimp.LayerMode.NORMAL)
+        self.image.insert_layer(layer, self.group, 0)
+        self.add(col, row, layer)
+        self.fill_layer = layer
+        return layer
+
+    def select_rect(self, col: int, row: int, cols: int, rows: int):
+        x = self.off_x + (col - 1) * self.grid
+        y = self.off_y + (row - 1) * self.grid
+        wid = cols * self.grid
+        hei = rows * self.grid
+        self.image.select_rectangle(Gimp.ChannelOps.REPLACE, x, y, wid, hei)
+
+    @staticmethod
+    def set_fill_color(color_name: str):
+        color = Gegl.Color.new(color_name)
+        Gimp.context_set_foreground(color)
+
+    def fill_rect(self, col: int, row: int, cols: int, rows: int):
+        if self.fill_layer is None:
+            raise ValueError("Fill layer is not set. Use new_fill_layer() to create one.")
+
+        self.select_rect(col, row, cols, rows)
+        self.fill_layer.edit_fill(Gimp.FillType.FOREGROUND)
+        Gimp.Selection.none(self.image)
+
     def finalize(self) -> Gimp.Layer:
         result = self.group.merge()
         self.group = None
@@ -407,6 +462,7 @@ class TilesetTargetGroup(TilesetBase):
         x1, y1 = self.off_x, self.off_y
         result.resize(self.wid, self.hei, x0 - x1, y0 - y1)
         return result
+
 
 def _validate_index(index: int, cols: int, rows: int):
     total_tiles = rows * cols

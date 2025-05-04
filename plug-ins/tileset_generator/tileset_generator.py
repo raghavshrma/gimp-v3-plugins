@@ -9,7 +9,7 @@ from gi.repository import Gimp, GObject
 import sys
 import handler, gimp_error, dialog_window
 
-plug_in_binary = "tileset-quick-generator"
+plug_in_binary = "tileset-generator"
 plug_in_proc = "plug-in-tlk-" + plug_in_binary
 
 def execute(
@@ -35,10 +35,11 @@ def execute(
         return gimp_error.calling(procedure, "misconfigured plug-in. Needs at least on run method")
 
     if len(drawables) == 1:
-        if not isinstance(drawables[0], Gimp.Layer):
+        layer = drawables[0]
+        if not isinstance(layer, Gimp.Layer):
             return gimp_error.calling(procedure, "works with layers only.")
 
-        return handler.run_one(procedure, run_mode, image, drawables[0], config, data)
+        return handler.run_one(procedure, run_mode, image, layer, config, data)
 
     return gimp_error.calling(procedure, "works with one layer.")
 
@@ -76,6 +77,7 @@ class TilesetQuickGenerator(Gimp.PlugIn):
 
         procedure.add_int_argument("operation", "Operation", None, 0, len(handler.OPERATIONS) - 1, 0, GObject.ParamFlags.READWRITE)
         procedure.add_int_argument("target", "Target", None, 0, 1, 0, GObject.ParamFlags.READWRITE)
+        procedure.add_boolean_argument("quick", "Quick", None, False, GObject.ParamFlags.READWRITE)
 
         return procedure
 

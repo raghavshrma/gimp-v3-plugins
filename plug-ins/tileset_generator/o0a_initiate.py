@@ -7,10 +7,19 @@ from generator_config import GeneratorConfig
 
 
 def handle(config: GeneratorConfig):
+    _initiate(config)
+
+def quick(config: GeneratorConfig):
+    _initiate(config)
+
+def _initiate(config: GeneratorConfig):
     colors = utils.find_or_create_group(config.image, "colors", None)
     outlines = utils.find_or_create_group(config.image, "outlines", None)
 
-    groups = [("c-", colors), ("o-", outlines)]
+    groups = [
+        (config.get_prefix(True), colors),
+        (config.get_prefix(False), outlines),
+    ]
 
     for prefix, group in groups:
         _add_sample_layer(config, prefix, group)
@@ -25,7 +34,7 @@ def _add_empty_layer(config: GeneratorConfig, prefix: str, parent: Gimp.GroupLay
     layer_name = f"{prefix}empty"
     layer = _setup_layer(config, layer_name, parent, 7 * g, 5 * g)
 
-    fill_bg = prefix == "c-"
+    fill_bg = prefix == config.get_prefix(True)
 
     if fill_bg:
         color = Gegl.Color.new("0")
@@ -39,7 +48,8 @@ def _add_sample_layer(config: GeneratorConfig, prefix: str, parent: Gimp.GroupLa
     g = config.grid
 
     layer_name = f"{prefix}sample"
-    _setup_layer(config, layer_name, parent, 10 * g, 10 * g)
+    wid, hei = (14, 8) if config.is_quick else (10, 10)
+    _setup_layer(config, layer_name, parent, wid * g, hei * g)
 
 def _setup_layer(config: GeneratorConfig, name: str, parent: Gimp.GroupLayer | None, wid: int, hei: int) -> Gimp.Layer:
     image = config.image

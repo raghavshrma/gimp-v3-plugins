@@ -15,6 +15,8 @@ def handle(config: GeneratorConfig):
 
     s.cleanup()
 
+def quick(config: GeneratorConfig):
+    handle(config)
 
 def _setup_sources(src: Builder):
     src.setup_sample()
@@ -33,4 +35,4 @@ def _build_single_v_seamless_tile(s: BuilderSet):
         t.add(2, 2, src.sample_single_v())
 
     layer = s.build3("single-v-seamless", _ref)
-    utils.seamless_offset_h(layer, s.grid)
+    utils.seamless_offset_v(layer, s.grid)

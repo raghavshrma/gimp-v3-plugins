@@ -8,7 +8,7 @@ gi.require_version("Gimp", "3.0")
 from gi.repository import Gimp
 from gi.repository import GLib
 
-error_prefix="Procedure 'tileset-quick-generator'"
+error_prefix="Procedure 'tileset-generator'"
 
 def _gimp_error(procedure: Gimp.Procedure, status, message: str):
     return procedure.new_return_values(

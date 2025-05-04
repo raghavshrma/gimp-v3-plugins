@@ -3,21 +3,25 @@ import gi
 gi.require_version("Gimp", "3.0")
 import utils
 from generator_config import GeneratorConfig
-from tileset_builder import Builder, BuilderSet
+from tileset_builder import Builder, BuilderSet, QuickBuilder
 from tileset_collection import TilesetTargetGroup
 
 
 def handle(config: GeneratorConfig):
-    s = BuilderSet(config)
-    s.initiate_level(1)
-    s.setup(_setup_sources)
-    s.set_target_size(3, 3)
-    s.set_target_spacing(1, 1, 4, 4)
+    s = _initiate(config)
     _build_edge_h_ref_tile(s)
     _build_edge_v_ref_tile(s)
 
     s.cleanup()
 
+
+def _initiate(config: GeneratorConfig):
+    s = BuilderSet(config)
+    s.initiate_level(1)
+    s.setup(_setup_sources)
+    s.set_target_size(3, 3)
+    s.set_target_spacing(1, 1, 4, 4)
+    return s
 
 def _setup_sources(src: Builder):
     src.setup_sample()
@@ -41,3 +45,7 @@ def _build_edge_v_ref_tile(s: BuilderSet):
     layer = s.build3("edge-v-seamless", _build)
     utils.seamless_offset_v(layer, s.grid)
 
+# -----------------------
+
+def quick(config: GeneratorConfig):
+    handle(config)

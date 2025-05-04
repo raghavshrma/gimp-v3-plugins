@@ -12,20 +12,32 @@ class GeneratorConfig:
     """
 
     def __init__(
-        self, image: Gimp.Image, drawable: Gimp.Layer, config: Gimp.ProcedureConfig
+            self, image: Gimp.Image, drawable: Gimp.Layer, config: Gimp.ProcedureConfig
     ):
         self.image = image
         self.drawable = drawable
         self.config = config
 
+        self.is_quick = config.get_property("quick")
         self.is_color_target = config.get_property("target") == 1
-        self.prefix = self.is_color_target and "c-" or "o-"
+        self.prefix = self.get_prefix(self.is_color_target)
+
         self.grid = utils.get_grid_size(image)
         self._root: Gimp.GroupLayer | None = None
 
+    def get_prefix(self, is_color_target: bool):
+        prefix = is_color_target and "c-" or "o-"
+        if self.is_quick:
+            prefix = "q" + prefix
+        return prefix
+
+    @staticmethod
+    def get_root_name(is_color_target: bool):
+        return is_color_target and "colors" or "outlines"
+
     def setup_root(self):
         if self._root is None:
-            root_group_name = self.is_color_target and "colors" or "outlines"
+            root_group_name = self.get_root_name(self.is_color_target)
             self._root = self.find_group(root_group_name)
 
         return self._root
@@ -62,7 +74,7 @@ class GeneratorConfig:
         return group
 
     def set_visible_levels(self, levels: list[int]):
-        dependencies = self.get_level_names(levels)
+        dependencies = set(self.get_level_names(levels))
 
         root = self.setup_root()
         children = root.get_children()
@@ -82,3 +94,11 @@ class GeneratorConfig:
         """
 
         return f"{self.prefix}l{level}" if level > 0 else f"{self.prefix}sample"
+
+    def range_cols(self, start: int = 1):
+        end = 3 if self.is_quick else 7
+        return range(start, end)
+
+    def range_rows(self, start: int = 1):
+        end = 3 if self.is_quick else 6
+        return range(start, end)

@@ -21,6 +21,9 @@ def handle(config: GeneratorConfig):
 
     s.cleanup()
 
+def quick(config: GeneratorConfig):
+    handle(config)
+
 
 def _setup_sources(src: Builder):
     src.setup_sample()
@@ -59,7 +62,7 @@ def _build_h_middle(s: BuilderSet):
     h1 = s.build3("single-h-1", _first)
     utils.seamless_offset_h(h1, s.grid)
 
-    for i in range(2, 7):
+    for i in s.range_cols(2):
         trg = s.create_target(f"single-h-{i}")
         s.build2(trg, lambda t, src: _nth(t, src, i))
 
@@ -95,7 +98,7 @@ def _build_v_middle(s: BuilderSet):
     v1 = s.build3("single-v-1", _first)
     utils.seamless_offset_v(v1, s.grid)
 
-    for i in range(2, 6):
+    for i in s.range_rows(2):
         trg = s.create_target(f"single-v-{i}")
         s.build2(trg, lambda t, src: _nth(t, src, i))
 

@@ -30,6 +30,8 @@ def handle(config: GeneratorConfig):
     s.cleanup()
     timer.end("Connectors")
 
+def quick(config: GeneratorConfig):
+    handle(config)
 
 def _setup_sources(src: Builder):
     src.setup_sample()
@@ -64,6 +66,9 @@ def _build_connectors_1(s: BuilderSet, idx: int):
             src.a_up(),
         ])
 
+        if src.config.is_quick:
+            return
+
         t.add(2, 4, [
             src.in_corner_br(),
             src.d_left_u(),
@@ -88,7 +93,7 @@ def _build_connectors_1(s: BuilderSet, idx: int):
             src.a_down(),
         ])
 
-    s.build3(f"connector-{idx}-ref", _ref, move=False, fill=False)
+    s.build3(f"connector-{idx}-ref", _ref, move=False, fill=True)
     s.build3(f"connector-{idx}", _main)
 
 
@@ -117,6 +122,9 @@ def _build_connectors_2(s: BuilderSet, idx: int):
             src.a(3),
         ])
 
+        if src.config.is_quick:
+            return
+
         t.add(2, 4, [
             src.in_corner_tl(),
             src.d(1),
@@ -141,7 +149,7 @@ def _build_connectors_2(s: BuilderSet, idx: int):
             src.a(2),
         ])
 
-    s.build3(f"connector-{idx}-ref", _ref, move=False, fill=False)
+    s.build3(f"connector-{idx}-ref", _ref, move=False, fill=True)
     s.build3(f"connector-{idx}", _main)
 
 
@@ -179,6 +187,9 @@ def _build_connectors_3(s: BuilderSet, idx: int):
             src.a(1),
         ])
 
+        if src.config.is_quick:
+            return
+
         t.add(2, 4, [
             src.edge_bottom(),
             src.c(1),
@@ -199,7 +210,7 @@ def _build_connectors_3(s: BuilderSet, idx: int):
             src.a(2),
         ])
 
-    s.build3(f"connector-{idx}-ref", _ref, move=False, fill=False)
+    s.build3(f"connector-{idx}-ref", _ref, move=False, fill=True)
     s.build3(f"connector-{idx}", _main)
 
 
@@ -235,6 +246,9 @@ def _build_connectors_4(s: BuilderSet, idx: int):
             src.b(3),
         ], )
 
+        if src.config.is_quick:
+            return
+
         t.add(4, 2, [
             src.in_corner_tr(),
             src.d(1),
@@ -268,7 +282,7 @@ def _build_connectors_4(s: BuilderSet, idx: int):
             src.b(4),
         ], )
 
-    s.build3(f"connector-{idx}-ref", _ref, move=False, fill=False)
+    s.build3(f"connector-{idx}-ref", _ref, move=False, fill=True)
     s.build3(f"connector-{idx}", _main)
 
 
@@ -309,6 +323,9 @@ def _build_connectors_5(s: BuilderSet, idx: int):
             src.b(3),
         ], )
 
+        if src.config.is_quick:
+            return
+
         t.add(4, 3, [
             src.in_corner_tr(),
             src.d(4),
@@ -327,7 +344,7 @@ def _build_connectors_5(s: BuilderSet, idx: int):
             src.b(4),
         ], )
 
-    s.build3(f"connector-{idx}-ref", _ref, move=False, fill=False)
+    s.build3(f"connector-{idx}-ref", _ref, move=False, fill=True)
     s.build3(f"connector-{idx}", _main)
 
 
@@ -353,26 +370,6 @@ def _build_connectors_6(s: BuilderSet, idx: int):
         t.add(3, 5, src.deep_corner_tl())
 
     def _main(t: TilesetTargetGroup, src: Builder):
-        t.add(2, 2, [
-            src.in_corner_tl(),
-            src.d(1),
-            src.d(3),
-            src.d(6),
-            src.d(8),
-            src.b(1),
-            src.b(4),
-        ], )
-
-        t.add(2, 4, [
-            src.in_corner_tr(),
-            src.d(2),
-            src.d(4),
-            src.d(5),
-            src.d(7),
-            src.b(2),
-            src.b(3),
-        ], )
-
         t.add(4, 3, [
             src.in_corner_tl(),
             src.c(1),
@@ -385,7 +382,30 @@ def _build_connectors_6(s: BuilderSet, idx: int):
             src.b(4),
         ], )
 
-    s.build3(f"connector-{idx}-ref", _ref, move=False, fill=False)
+        t.add(2, 2, [
+            src.in_corner_tl(),
+            src.d(1),
+            src.d(3),
+            src.d(6),
+            src.d(8),
+            src.b(1),
+            src.b(4),
+        ], )
+
+        if src.config.is_quick:
+            return
+
+        t.add(2, 4, [
+            src.in_corner_tr(),
+            src.d(2),
+            src.d(4),
+            src.d(5),
+            src.d(7),
+            src.b(2),
+            src.b(3),
+        ], )
+
+    s.build3(f"connector-{idx}-ref", _ref, move=False, fill=True)
     s.build3(f"connector-{idx}", _main)
 
 
@@ -429,7 +449,7 @@ def _build_connectors_7(s: BuilderSet, idx: int):
             src.b(1),
         ], )
 
-    s.build3(f"connector-{idx}-ref", _ref, move=False, fill=False)
+    s.build3(f"connector-{idx}-ref", _ref, move=False, fill=True)
     s.build3(f"connector-{idx}", _main)
 
 
@@ -457,5 +477,5 @@ def _build_connectors_8(s: BuilderSet, idx: int):
         t.add(5, 2, [src.single_v()])
         t.add(5, 4, [src.single_v()])
 
-    s.build3(f"connector-{idx}-ref", _ref, move=False, fill=False)
+    s.build3(f"connector-{idx}-ref", _ref, move=False, fill=True)
     s.build3(f"connector-{idx}", _main)
