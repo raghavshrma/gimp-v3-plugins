@@ -30,8 +30,8 @@ def run_one(
 
     image.set_selected_layers([drawable])
 
-    if has_selection:
-        image.select_rectangle(Gimp.ChannelOps.REPLACE, x1, y1, x2-x1, y2-y1)
+    # if has_selection:
+    #     image.select_rectangle(Gimp.ChannelOps.REPLACE, x1, y1, x2-x1, y2-y1)
 
     image.undo_group_end()
     return gimp_error.success(procedure)

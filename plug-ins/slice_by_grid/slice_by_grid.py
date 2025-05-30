@@ -55,7 +55,7 @@ def run_func(
     try:
         return execute(procedure, run_mode, image, drawables, config, data)
     except Exception as e:
-        return gimp_error.execution(procedure, e)
+        return gimp_error.execution(procedure, str(e))
 
 class SliceByGrid(Gimp.PlugIn):
     def do_query_procedures(self):
