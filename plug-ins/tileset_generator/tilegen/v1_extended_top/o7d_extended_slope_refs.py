@@ -4,15 +4,14 @@ gi.require_version("Gimp", "3.0")
 from gi.repository import Gimp
 from datetime import datetime
 
-import utils
-from tileset_collection import TilesetSource, TilesetTargetGroup
-from tileset_builder import Builder
+from tilegen.core import GeneratorConfig, TargetSet, TilesetTargetGroup, utils
+from tilegen.v1_extended_top.v1_builder import V1SourceSet
 
 
 def handle(image: Gimp.Image, sample: Gimp.Layer, config: Gimp.ProcedureConfig):
     utils.find_or_create_layer(image, "l6-slopes", 4, 8, utils.get_main_group(image))
     group = utils.get_ref_group(image, 6)
-    builder = Builder(image, sample, group)
+    builder = V1SourceSet(image, sample, group)
     builder.target_root.set_visible(True)
     g = utils.get_grid_size(image)
     x, y = 6 * g, 3 * g

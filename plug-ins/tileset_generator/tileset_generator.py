@@ -75,7 +75,8 @@ class TilesetQuickGenerator(Gimp.PlugIn):
         procedure.add_menu_path("<Image>/Tileset/Transform/")
         procedure.set_documentation("Tileset Quick Generator", None)
 
-        procedure.add_int_argument("operation", "Operation", None, 0, len(handler.OPERATIONS) - 1, 0, GObject.ParamFlags.READWRITE)
+        procedure.add_int_argument("module", "Module", None, 1, len(handler.MODULES) - 1, 0, GObject.ParamFlags.READWRITE)
+        procedure.add_int_argument("operation", "Operation", None, 0, 50, 0, GObject.ParamFlags.READWRITE)
         procedure.add_int_argument("target", "Target", None, 0, 1, 0, GObject.ParamFlags.READWRITE)
         procedure.add_boolean_argument("quick", "Quick", None, False, GObject.ParamFlags.READWRITE)
 

@@ -3,8 +3,7 @@ import gi
 gi.require_version("Gimp", "3.0")
 
 from gi.repository import Gimp
-import utils
-
+from tilegen.core import utils
 
 class GeneratorConfig:
     """
@@ -18,12 +17,20 @@ class GeneratorConfig:
         self.drawable = drawable
         self.config = config
 
-        self.is_quick = config.get_property("quick")
-        self.is_color_target = config.get_property("target") == 1
-        self.prefix = self.get_prefix(self.is_color_target)
+        self.is_quick: bool = False
+        self.is_color_target: bool = False
+        self.prefix: str = ""
 
         self.grid = utils.get_grid_size(image)
         self._root: Gimp.GroupLayer | None = None
+        self._all_roots: list[Gimp.GroupLayer] = []
+        self.setup()
+
+    def setup(self):
+        self.is_quick = self.config.get_property("quick")
+        self.is_color_target: bool = self.config.get_property("target") == 1
+        self.prefix = self.get_prefix(self.is_color_target)
+
 
     def get_prefix(self, is_color_target: bool):
         prefix = is_color_target and "c-" or "o-"
@@ -35,11 +42,21 @@ class GeneratorConfig:
     def get_root_name(is_color_target: bool):
         return is_color_target and "colors" or "outlines"
 
-    def setup_root(self):
-        if self._root is None:
+    def setup_root(self, force: bool = False) -> Gimp.GroupLayer:
+        if (self._root is None) or force:
             root_group_name = self.get_root_name(self.is_color_target)
             self._root = self.find_group(root_group_name)
 
+            children = self.image.get_layers()
+            self._all_roots = []
+            for child in children:
+                if isinstance(child, Gimp.GroupLayer):
+                    child.set_expanded(False)
+                    name = child.get_name()
+                    if 'colors' in name or 'outlines' in name:
+                        self._all_roots.append(child)
+
+        self._root.set_expanded(True)
         return self._root
 
     def find_group(self, name: str) -> Gimp.GroupLayer:
@@ -61,8 +78,8 @@ class GeneratorConfig:
         - Find or creates the layer group for this target
         """
 
-        other_root_name = self.is_color_target and "outlines" or "colors"
-        utils.hide_layer(self.image, other_root_name)
+        # other_root_name = self.is_color_target and "outlines" or "colors"
+        # utils.hide_layer(self.image, other_root_name)
 
         group_name = f"{self.prefix}l{level}"
         root = self.setup_root()

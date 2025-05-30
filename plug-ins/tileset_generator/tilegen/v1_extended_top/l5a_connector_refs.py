@@ -3,16 +3,14 @@ import gi
 gi.require_version("Gimp", "3.0")
 from gi.repository import Gimp
 
-from generator_config import GeneratorConfig
-from tileset_builder import Builder, BuilderSet
-from tileset_collection import TilesetTargetGroup, AreaBuilder
-from datetime import datetime
-import utils
+from tilegen.core import GeneratorConfig, TargetSet, TilesetTargetGroup, utils
+from tilegen.v1_extended_top.v1_builder import V1SourceSet
 
 def handle(config: GeneratorConfig):
     timer = utils.ProcessTimer()
 
-    s = BuilderSet(config)
+    src = V1SourceSet(config)
+    s = src.create_target_set()
     s.initiate_level(5)
     s.setup(_setup_sources)
     s.set_target_spacing(1, 1, 6, 6)
@@ -33,7 +31,7 @@ def handle(config: GeneratorConfig):
 def quick(config: GeneratorConfig):
     handle(config)
 
-def _setup_sources(src: Builder):
+def _setup_sources(src: V1SourceSet):
     src.setup_sample()
     src.setup_edges()
     src.setup_corners()
@@ -41,8 +39,8 @@ def _setup_sources(src: Builder):
     src.setup_transition_tiles()
 
 
-def _build_connectors_1(s: BuilderSet, idx: int):
-    def _ref(t: TilesetTargetGroup, src: Builder):
+def _build_connectors_1(s: TargetSet, idx: int):
+    def _ref(t: TilesetTargetGroup, src: V1SourceSet):
         t.add(1, 1, src.single_h_full())
         t.add(2, 1, src.edge_top_ext())
         t.add(3, 1, src.edge_top_full())
@@ -57,7 +55,7 @@ def _build_connectors_1(s: BuilderSet, idx: int):
         t.add(3, 4, src.edge_bottom())
         t.add(5, 3, src.single_h_full())
 
-    def _main(t: TilesetTargetGroup, src: Builder):
+    def _main(t: TilesetTargetGroup, src: V1SourceSet):
         t.add(2, 2, [
             src.in_corner_bl(),
             src.d_right_u(),
@@ -97,8 +95,8 @@ def _build_connectors_1(s: BuilderSet, idx: int):
     s.build3(f"connector-{idx}", _main)
 
 
-def _build_connectors_2(s: BuilderSet, idx: int):
-    def _ref(t: TilesetTargetGroup, src: Builder):
+def _build_connectors_2(s: TargetSet, idx: int):
+    def _ref(t: TilesetTargetGroup, src: V1SourceSet):
         t.add(2, 1, [src.single_v(), src.in_corner_tr_ext()])
         t.add(4, 1, [src.single_v(), src.in_corner_tl_ext()])
 
@@ -113,7 +111,7 @@ def _build_connectors_2(s: BuilderSet, idx: int):
         t.add(2, 5, src.single_v())
         t.add(4, 5, src.single_v())
 
-    def _main(t: TilesetTargetGroup, src: Builder):
+    def _main(t: TilesetTargetGroup, src: V1SourceSet):
         t.add(2, 2, [
             src.in_corner_tr(),
             src.d(2),
@@ -153,8 +151,8 @@ def _build_connectors_2(s: BuilderSet, idx: int):
     s.build3(f"connector-{idx}", _main)
 
 
-def _build_connectors_3(s: BuilderSet, idx: int):
-    def _ref(t: TilesetTargetGroup, src: Builder):
+def _build_connectors_3(s: TargetSet, idx: int):
+    def _ref(t: TilesetTargetGroup, src: V1SourceSet):
         t.add(2, 1, [src.single_v(), src.in_corner_tr_ext()])
 
         t.add(3, 1, src.single_h_full())
@@ -169,7 +167,7 @@ def _build_connectors_3(s: BuilderSet, idx: int):
 
         t.add(4, 5, src.single_v())
 
-    def _main(t: TilesetTargetGroup, src: Builder):
+    def _main(t: TilesetTargetGroup, src: V1SourceSet):
         t.add(2, 2, [
             src.edge_left(),
             src.c(1), src.c(2), src.c(4),
@@ -214,8 +212,8 @@ def _build_connectors_3(s: BuilderSet, idx: int):
     s.build3(f"connector-{idx}", _main)
 
 
-def _build_connectors_4(s: BuilderSet, idx: int):
-    def _ref(t: TilesetTargetGroup, src: Builder):
+def _build_connectors_4(s: TargetSet, idx: int):
+    def _ref(t: TilesetTargetGroup, src: V1SourceSet):
         t.add(2, 1, [src.single_v(), src.in_corner_tl_ext(), src.in_corner_tr_ext()])
         t.add(4, 1, [src.single_v(), src.in_corner_tl_ext(), src.in_corner_tr_ext()])
 
@@ -234,7 +232,7 @@ def _build_connectors_4(s: BuilderSet, idx: int):
         t.add(2, 5, src.single_v())
         t.add(4, 5, src.single_v())
 
-    def _main(t: TilesetTargetGroup, src: Builder):
+    def _main(t: TilesetTargetGroup, src: V1SourceSet):
         t.add(2, 2, [
             src.in_corner_tl(),
             src.d(2),
@@ -286,8 +284,8 @@ def _build_connectors_4(s: BuilderSet, idx: int):
     s.build3(f"connector-{idx}", _main)
 
 
-def _build_connectors_5(s: BuilderSet, idx: int):
-    def _ref(t: TilesetTargetGroup, src: Builder):
+def _build_connectors_5(s: TargetSet, idx: int):
+    def _ref(t: TilesetTargetGroup, src: V1SourceSet):
         t.add(3, 1, [src.single_v(), src.in_corner_tl_ext(), src.in_corner_tr_ext()])
 
         t.add(2, 1, src.out_corner_tl_full())
@@ -304,7 +302,7 @@ def _build_connectors_5(s: BuilderSet, idx: int):
 
         t.add(3, 5, src.single_v())
 
-    def _main(t: TilesetTargetGroup, src: Builder):
+    def _main(t: TilesetTargetGroup, src: V1SourceSet):
         t.add(3, 2, [
             src.in_corner_tl(),
             src.d(1),
@@ -348,8 +346,8 @@ def _build_connectors_5(s: BuilderSet, idx: int):
     s.build3(f"connector-{idx}", _main)
 
 
-def _build_connectors_6(s: BuilderSet, idx: int):
-    def _ref(t: TilesetTargetGroup, src: Builder):
+def _build_connectors_6(s: TargetSet, idx: int):
+    def _ref(t: TilesetTargetGroup, src: V1SourceSet):
         t.add(2, 1, [src.edge_left(), src.in_corner_tl_ext()])
         t.add(3, 1, src.deep_corner_bl())
 
@@ -369,7 +367,7 @@ def _build_connectors_6(s: BuilderSet, idx: int):
         t.add(2, 5, src.edge_left())
         t.add(3, 5, src.deep_corner_tl())
 
-    def _main(t: TilesetTargetGroup, src: Builder):
+    def _main(t: TilesetTargetGroup, src: V1SourceSet):
         t.add(4, 3, [
             src.in_corner_tl(),
             src.c(1),
@@ -409,8 +407,8 @@ def _build_connectors_6(s: BuilderSet, idx: int):
     s.build3(f"connector-{idx}", _main)
 
 
-def _build_connectors_7(s: BuilderSet, idx: int):
-    def _ref(t: TilesetTargetGroup, src: Builder):
+def _build_connectors_7(s: TargetSet, idx: int):
+    def _ref(t: TilesetTargetGroup, src: V1SourceSet):
         t.add(2, 1, src.out_corner_tl_ext())
         t.add(3, 1, src.single_h_full())
         t.add(4, 1, src.out_corner_tr_ext())
@@ -420,7 +418,7 @@ def _build_connectors_7(s: BuilderSet, idx: int):
 
         t.add(3, 3, src.single_h_full())
 
-    def _main(t: TilesetTargetGroup, src: Builder):
+    def _main(t: TilesetTargetGroup, src: V1SourceSet):
         t.add(2, 2, [
             src.out_corner_tl(),
             src.c(2),
@@ -453,15 +451,15 @@ def _build_connectors_7(s: BuilderSet, idx: int):
     s.build3(f"connector-{idx}", _main)
 
 
-def _build_connectors_8(s: BuilderSet, idx: int):
-    def _ref(t: TilesetTargetGroup, src: Builder):
+def _build_connectors_8(s: TargetSet, idx: int):
+    def _ref(t: TilesetTargetGroup, src: V1SourceSet):
         t.add(1, 1, src.out_corner_tl_ext())
         t.add(2, 1, src.single_h_full())
         t.add(3, 1, src.out_corner_tr_ext())
 
         t.add(5, 3, src.single_v())
 
-    def _main(t: TilesetTargetGroup, src: Builder):
+    def _main(t: TilesetTargetGroup, src: V1SourceSet):
         t.add(1, 2, [
             src.out_corner_tl(),
             src.c(2),

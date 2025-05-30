@@ -4,15 +4,14 @@ gi.require_version("Gimp", "3.0")
 from gi.repository import Gimp
 from datetime import datetime
 
-import utils
-from tileset_collection import TilesetSource, TilesetTargetGroup
-from tileset_builder import Builder
+from tilegen.core import utils
+from tilegen.v1_extended_top.v1_builder import V1SourceSet
 
 
 def handle(image: Gimp.Image, sample: Gimp.Layer, config: Gimp.ProcedureConfig):
     utils.find_or_create_layer(image, "l6-slopes", 4, 8, utils.get_main_group(image))
     group = utils.get_ref_group(image, 6)
-    builder = Builder(image, sample, group)
+    builder = V1SourceSet(image, sample, group)
     builder.target_root.set_visible(True)
     g = utils.get_grid_size(image)
     x, y = 6 * g, 2 * g
@@ -34,7 +33,7 @@ def handle(image: Gimp.Image, sample: Gimp.Layer, config: Gimp.ProcedureConfig):
     builder.cleanup()
 
 
-def _build_slopes_4(bld: Builder, idx: int, x: int, y: int):
+def _build_slopes_4(bld: V1SourceSet, idx: int, x: int, y: int):
     t_raw = _get_raw_group(bld, idx, x, y)
 
     t_raw.add(2, 1, bld.out_corner_tl_full())
@@ -53,11 +52,11 @@ def _build_slopes_4(bld: Builder, idx: int, x: int, y: int):
     t_ref.finalize()
 
 
-def _get_raw_group(builder: Builder, idx: int, x: int, y: int):
+def _get_raw_group(builder: V1SourceSet, idx: int, x: int, y: int):
     name = f"l6-slopes-raw-{idx}"
     return builder.get_target_group(name, x, y, 5, 5)
 
 
-def _get_ref_group(builder: Builder, idx: int, x: int, y: int):
+def _get_ref_group(builder: V1SourceSet, idx: int, x: int, y: int):
     name = f"l6-slopes-ref-{idx}"
     return builder.get_target_group(name, x, y, 5, 5)

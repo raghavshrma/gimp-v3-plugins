@@ -1,13 +1,10 @@
 import gi
 
-gi.require_version("Gimp", "3.0")
-import utils
-from gi.repository import Gimp, Gegl
+from tilegen.v1_extended_top.v1_builder import V1SourceSet
+from tilegen.v2_quick.v2_builder import V2SourceSet
 
-from generator_config import GeneratorConfig
-from tileset_builder import Builder, BuilderSet, QuickBuilder
-from tileset_collection import TilesetTargetGroup
-from tileset_collection import AreaBuilder, Area
+gi.require_version("Gimp", "3.0")
+from tilegen.core import utils, GeneratorConfig, AreaBuilder, TilesetTargetGroup
 
 
 def handle(config: GeneratorConfig):
@@ -25,7 +22,8 @@ def quick(config: GeneratorConfig):
 
 
 def _initiate(config: GeneratorConfig):
-    s = BuilderSet(config)
+    src = V2SourceSet(config)
+    s = src.create_target_set()
     root = config.setup_root()
     layer_name = config.get_level_name(0)
     utils.set_visible_layers(config.image, root, [layer_name])
@@ -34,10 +32,10 @@ def _initiate(config: GeneratorConfig):
     s.set_target_spacing(0, 9, 4, 4)
     return s
 
-def _setup_sources(src: Builder):
+def _setup_sources(src: V1SourceSet):
     src.setup_sample()
 
-def _build_init_sample(t: TilesetTargetGroup, src: QuickBuilder):
+def _build_init_sample(t: TilesetTargetGroup, src: V2SourceSet):
     area = AreaBuilder(src.grid, 12)
     a_h = area.mid_seam_horizontal()
     a_v = area.mid_seam_vertical()
@@ -63,8 +61,6 @@ def _build_init_sample(t: TilesetTargetGroup, src: QuickBuilder):
     t.add(9, 2, a_t.crop(src.sample_seam_edge_top()))
     t.add(9, 2, a_v.crop(src.sample_seam_edge_right()))
     t.add(10, 2, a_v.crop(src.sample_seam_edge_left()))
-
-
 
 
     # center blocks

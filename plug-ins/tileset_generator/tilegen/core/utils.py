@@ -222,3 +222,10 @@ class ProcessTimer:
         elapsed = end - self.start
         seconds = round(elapsed.total_seconds(), 1)
         Gimp.message(f"{msg} took {seconds}s.")
+
+
+def hide_layers_in_group(image: Gimp.Image, group: Gimp.GroupLayer):
+    children = image.get_layers() if group is None else group.get_children()
+    for layer in children:
+        layer.set_visible(False)
+        layer.set_expanded(False)

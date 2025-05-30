@@ -5,43 +5,38 @@ import gi
 gi.require_version("Gimp", "3.0")
 from gi.repository import Gimp, Gio
 
-from generator_config import GeneratorConfig
-from tileset_builder import Builder, BuilderSet, QuickBuilder
-from tileset_collection import TilesetTargetGroup
-import utils
+from tilegen.core import GeneratorConfig, TargetSet, TilesetTargetGroup, utils
+from tilegen.v1_extended_top.v1_builder import V1SourceSet, V1TargetSet
 
 
 def handle(config: GeneratorConfig):
-    timer = utils.ProcessTimer()
-    s = BuilderSet(config)
-    s.initiate_level(9)
-    s.setup(_setup_sources)
+    s = V1SourceSet(config).create_target_set()
+    # group = s.initiate_level(0)
+    # utils.set_visible_layers(config.image, group, [])
 
-    _build_sample(s)
-    s.cleanup()
-    timer.end("Consolidate Tileset")
-    _export_image(s)
+    # s.setup(_setup_sources)
+    #
+    # _build_sample(s)
+    # s.cleanup()
+    # timer.end("Consolidate Tileset")
+    # _export_image(s)
 
 
-def _setup_sources(src: Builder):
+def _setup_sources(src: V1SourceSet):
     src.setup_sample()
-    src.setup_edges()
-    src.setup_corners()
-    src.setup_singles(corners=True)
-    src.setup_connectors()
 
 
-def _build_sample(s: BuilderSet):
+def _build_sample(s: V1TargetSet):
     s.set_target_spacing(0, 0, 1, 1, True)
     s.set_target_size(13, 10)
     s.build3("final", _build_blocks)
 
 
-def _build_all(t: TilesetTargetGroup, src: Builder):
+def _build_all(t: TilesetTargetGroup, src: V1SourceSet):
     _build_blocks(t, src)
 
 
-def _build_blocks(t: TilesetTargetGroup, src: Builder):
+def _build_blocks(t: TilesetTargetGroup, src: V1SourceSet):
     t.add(1, 1, src.out_corner_tl_full())
     t.add(8, 1, src.out_corner_tr_full())
     t.add(1, 8, src.out_corner_bl())
@@ -88,7 +83,7 @@ def _build_blocks(t: TilesetTargetGroup, src: Builder):
 
 def quick(config: GeneratorConfig):
     timer = utils.ProcessTimer()
-    s = BuilderSet(config)
+    s = V1SourceSet(config).create_target_set()
     s.initiate_level(9)
     s.setup(_setup_quick)
 
@@ -100,7 +95,7 @@ def quick(config: GeneratorConfig):
     _export_image(s)
 
 
-def _setup_quick(src: Builder):
+def _setup_quick(src: V1SourceSet):
     src.setup_sample()
     src.setup_edges()
     src.setup_corners()
@@ -108,7 +103,7 @@ def _setup_quick(src: Builder):
     src.setup_connectors()
 
 
-def _build_quick(t: TilesetTargetGroup, src: QuickBuilder | Builder):
+def _build_quick(t: TilesetTargetGroup, src: V1SourceSet):
     t.add(2, 1, src.out_corner_tl_full())
     t.add(5, 1, src.out_corner_tr_full())
     t.add(2, 5, src.out_corner_bl())
@@ -163,7 +158,7 @@ def _build_quick(t: TilesetTargetGroup, src: QuickBuilder | Builder):
     t.add(13, 7, src.connector(6, 3))
 
 
-def _export_image(s: BuilderSet):
+def _export_image(s: V1TargetSet):
     image = s.image
     xcf_file = image.get_xcf_file()
     if xcf_file is None:

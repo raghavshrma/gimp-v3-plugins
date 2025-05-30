@@ -4,15 +4,14 @@ gi.require_version("Gimp", "3.0")
 from gi.repository import Gimp
 from datetime import datetime
 
-import utils
-from tileset_collection import TilesetSource, TilesetTargetGroup
-from tileset_builder import Builder
+from tilegen.core import GeneratorConfig, TargetSet, TilesetTargetGroup, utils, TilesetSource
+from tilegen.v1_extended_top.v1_builder import V1SourceSet
 
 
 def handle(image: Gimp.Image, sample: Gimp.Layer, config: Gimp.ProcedureConfig):
     # utils.find_or_create_layer(image, "l6-slopes", 4, 8, utils.get_main_group(image))
     group = utils.get_ref_group(image, 6)
-    builder = Builder(image, sample, group)
+    builder = V1SourceSet(image, sample, group)
     builder.target_root.set_visible(True)
     g = utils.get_grid_size(image)
     x, y = 6 * g, 2 * g
@@ -37,7 +36,7 @@ def handle(image: Gimp.Image, sample: Gimp.Layer, config: Gimp.ProcedureConfig):
     builder.cleanup()
 
 
-def _build_slopes_6(bld: Builder, idx: int, x: int, y: int):
+def _build_slopes_6(bld: V1SourceSet, idx: int, x: int, y: int):
     t_raw = _get_raw_group(bld, idx, x, y)
     _add_raw_source(bld, t_raw, 2)
     t_raw.add(2, 2, bld.in_corner_tl_ext())
@@ -53,7 +52,7 @@ def _build_slopes_6(bld: Builder, idx: int, x: int, y: int):
     t_ref.finalize()
 
 
-def _build_slopes_7(bld: Builder, idx: int, x: int, y: int):
+def _build_slopes_7(bld: V1SourceSet, idx: int, x: int, y: int):
     t_raw = _get_raw_group(bld, idx, x, y)
     _add_raw_source(bld, t_raw, 3)
     t_raw.add(2, 2, bld.in_corner_tl_ext())
@@ -70,7 +69,7 @@ def _build_slopes_7(bld: Builder, idx: int, x: int, y: int):
     t_ref.finalize()
 
 
-def _build_slopes_8(bld: Builder, idx: int, x: int, y: int):
+def _build_slopes_8(bld: V1SourceSet, idx: int, x: int, y: int):
     t_raw = _get_raw_group(bld, idx, x, y)
     _add_raw_source(bld, t_raw, 4)
     t_raw.add(2, 2, bld.in_corner_tl_ext())
@@ -89,7 +88,7 @@ def _build_slopes_8(bld: Builder, idx: int, x: int, y: int):
     t_ref.finalize()
 
 
-def _build_slopes_9(bld: Builder, idx: int, x: int, y: int):
+def _build_slopes_9(bld: V1SourceSet, idx: int, x: int, y: int):
     t_raw = _get_raw_group(bld, idx, x, y)
     t_raw.add(2, 2, [bld.in_corner_tl()])
     t_raw.add(4, 2, [bld.in_corner_tr()])
@@ -125,16 +124,16 @@ def _build_slopes_9(bld: Builder, idx: int, x: int, y: int):
     t_ref.finalize()
 
 
-def _get_raw_group(builder: Builder, idx: int, x: int, y: int):
+def _get_raw_group(builder: V1SourceSet, idx: int, x: int, y: int):
     name = f"l6-slopes-raw-{idx}"
     return builder.get_target_group(name, x, y, 5, 5)
 
 
-def _add_raw_source(builder: Builder, t_raw: TilesetTargetGroup, source_idx: int):
+def _add_raw_source(builder: V1SourceSet, t_raw: TilesetTargetGroup, source_idx: int):
     base = TilesetSource(builder.image, f"l6-slopes-raw-{source_idx}", t_raw.group)
     t_raw.add(1, 1, base.copy_block2(1, 1, 5, 3))
 
 
-def _get_ref_group(builder: Builder, idx: int, x: int, y: int):
+def _get_ref_group(builder: V1SourceSet, idx: int, x: int, y: int):
     name = f"l6-slopes-ref-{idx}"
     return builder.get_target_group(name, x, y, 5, 5)

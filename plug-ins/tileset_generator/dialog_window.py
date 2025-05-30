@@ -13,11 +13,18 @@ from gi.repository import GimpUi
 from gi.repository import Gtk
 
 import gimp_error
-from handler import OPERATIONS
+from handler import MODULES
 
-STORE_TARGET = GimpUi.IntStore.new(["Outline", "Colors"])
+def get_module_names(mod_tuple):
+    _, operations = mod_tuple
+    names = list(map(lambda x: f"{x[0]}: {x[1]}", operations))
+    return GimpUi.IntStore.new(names)
+
+NAME, OPERATIONS = MODULES[2]
+
+OPTIONS_TARGET = GimpUi.IntStore.new(["Outline", "Colors"])
 OPERATION_NAMES = list(map(lambda x: f"{x[0]}: {x[1]}", OPERATIONS))
-STORE_OPERATIONS = GimpUi.IntStore.new(OPERATION_NAMES)
+OPTIONS_OPERATIONS = GimpUi.IntStore.new(OPERATION_NAMES)
 
 # Change to _show if dialog is interactive
 def show(binary: str, procedure: Gimp.Procedure, config: Gimp.ProcedureConfig):
@@ -31,15 +38,17 @@ def show(binary: str, procedure: Gimp.Procedure, config: Gimp.ProcedureConfig):
     l_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=20)
     r_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
 
-    l_box.add(dialog.get_int_radio("target", STORE_TARGET))
+    l_box.add(dialog.get_int_radio("target", OPTIONS_TARGET))
     l_box.add(dialog.get_widget("quick", Gtk.CheckButton.__gtype__))
     # l_box.add(dialog.fill_frame("l-box", "LBox", True, "quick"))
-    r_box.add(dialog.get_int_radio("operation", STORE_OPERATIONS))
+    r_box.add(dialog.get_int_radio("operation", OPTIONS_OPERATIONS))
 
     main_box.add(l_box)
     main_box.add(r_box)
     area.add(main_box)
     area.show_all()
+
+    # check_button.on
 
     dialog.set_position(Gtk.WindowPosition.CENTER)
 

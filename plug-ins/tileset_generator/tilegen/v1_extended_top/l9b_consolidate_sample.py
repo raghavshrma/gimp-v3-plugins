@@ -2,15 +2,14 @@ import gi
 
 gi.require_version("Gimp", "3.0")
 
-from generator_config import GeneratorConfig
-from tileset_builder import Builder, BuilderSet
-from tileset_collection import TilesetTargetGroup, AreaBuilder
-import utils
+from tilegen.core import GeneratorConfig, TargetSet, TilesetTargetGroup, utils
+from tilegen.v1_extended_top.v1_builder import V1SourceSet
 
 def handle(config: GeneratorConfig):
     timer = utils.ProcessTimer()
     config.set_visible_levels([0])
-    s = BuilderSet(config)
+    src = V1SourceSet(config)
+    s = src.create_target_set()
     s.setup(_setup_sources)
 
     _build_sample(s)
@@ -18,20 +17,20 @@ def handle(config: GeneratorConfig):
     timer.end("Consolidate sample")
 
 
-def _setup_sources(src: Builder):
+def _setup_sources(src: V1SourceSet):
     src.setup_sample()
     src.setup_edges()
     src.setup_corners()
     src.setup_singles(corners=False)
 
-def _build_sample(s: BuilderSet):
+def _build_sample(s: TargetSet):
     s.set_target_spacing(0, 0, 1, 1, True)
     s.set_target_size(10, 10)
     l = s.build3("sample", _build)
     s.image.lower_item_to_bottom(l)
     s.image.raise_item(l)
 
-def _build(t: TilesetTargetGroup, src: Builder):
+def _build(t: TilesetTargetGroup, src: V1SourceSet):
     t.add(1, 1, src.out_corner_tl_full())
     t.add(8, 1, src.out_corner_tr_full())
     t.add(1, 8, src.out_corner_bl())

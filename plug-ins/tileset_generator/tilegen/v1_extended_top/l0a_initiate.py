@@ -2,9 +2,7 @@ import gi
 
 gi.require_version("Gimp", "3.0")
 from gi.repository import Gimp, Gegl
-import utils
-from generator_config import GeneratorConfig
-
+from tilegen.core import utils, GeneratorConfig
 
 def handle(config: GeneratorConfig):
     _initiate(config)

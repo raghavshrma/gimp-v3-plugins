@@ -1,11 +1,9 @@
-import utils
-from generator_config import GeneratorConfig
-from tileset_builder import Builder, BuilderSet
-from tileset_collection import TilesetTargetGroup
+from tilegen.core import GeneratorConfig, TargetSet, TilesetTargetGroup, utils
+from tilegen.v1_extended_top.v1_builder import V1SourceSet
 
 
 def handle(config: GeneratorConfig):
-    s = BuilderSet(config)
+    s = V1SourceSet(config).create_target_set()
     s.initiate_level(3)
     s.setup(_setup_sources)
 
@@ -25,38 +23,38 @@ def quick(config: GeneratorConfig):
     handle(config)
 
 
-def _setup_sources(src: Builder):
+def _setup_sources(src: V1SourceSet):
     src.setup_sample()
     src.custom_source("l3-single-h-seamless")
     src.custom_source("l3-single-v-seamless")
 
 
-def _build_h(s: BuilderSet):
+def _build_h(s: TargetSet):
     _build_h_left(s)
     _build_h_middle(s)
     _build_h_right(s)
 
 
-def _build_h_left(s: BuilderSet):
-    def _build(t: TilesetTargetGroup, src: Builder):
+def _build_h_left(s: TargetSet):
+    def _build(t: TilesetTargetGroup, src: V1SourceSet):
         t.add(2, 1, src.sample_single_h_left_full())
 
     s.build3("single-h-left", _build)
 
 
-def _build_h_right(s: BuilderSet):
-    def _build(t: TilesetTargetGroup, src: Builder):
+def _build_h_right(s: TargetSet):
+    def _build(t: TilesetTargetGroup, src: V1SourceSet):
         t.add(2, 1, src.sample_single_h_right_full())
 
     s.build3("single-h-right", _build)
 
 
-def _build_h_middle(s: BuilderSet):
-    def _first(t: TilesetTargetGroup, src: Builder):
+def _build_h_middle(s: TargetSet):
+    def _first(t: TilesetTargetGroup, src: V1SourceSet):
         key = "l3-single-h-seamless"
         t.add(1, 1, src.copy_block_custom(key, 1, 1, 3, 3))
 
-    def _nth(t: TilesetTargetGroup, src: Builder, index: int):
+    def _nth(t: TilesetTargetGroup, src: V1SourceSet, index: int):
         t.add(2, 1, src.sample_single_h_full(index))
 
     h1 = s.build3("single-h-1", _first)
@@ -67,32 +65,32 @@ def _build_h_middle(s: BuilderSet):
         s.build2(trg, lambda t, src: _nth(t, src, i))
 
 
-def _build_v(s: BuilderSet):
+def _build_v(s: TargetSet):
     _build_v_top(s)
     _build_v_middle(s)
     _build_v_bottom(s)
 
 
-def _build_v_top(s: BuilderSet):
-    def _build(t: TilesetTargetGroup, src: Builder):
+def _build_v_top(s: TargetSet):
+    def _build(t: TilesetTargetGroup, src: V1SourceSet):
         t.add(2, 1, src.sample_single_v_top_full())
 
     s.build3("single-v-top", _build)
 
 
-def _build_v_bottom(s: BuilderSet):
-    def _build(t: TilesetTargetGroup, src: Builder):
+def _build_v_bottom(s: TargetSet):
+    def _build(t: TilesetTargetGroup, src: V1SourceSet):
         t.add(2, 2, src.sample_single_v_bottom())
 
     s.build3("single-v-bottom", _build)
 
 
-def _build_v_middle(s: BuilderSet):
-    def _first(t: TilesetTargetGroup, src: Builder):
+def _build_v_middle(s: TargetSet):
+    def _first(t: TilesetTargetGroup, src: V1SourceSet):
         key = "l3-single-v-seamless"
         t.add(1, 1, src.copy_block_custom(key, 1, 1, 3, 3))
 
-    def _nth(t: TilesetTargetGroup, src: Builder, index: int):
+    def _nth(t: TilesetTargetGroup, src: V1SourceSet, index: int):
         t.add(2, 2, src.sample_single_v(index))
 
     v1 = s.build3("single-v-1", _first)
@@ -103,15 +101,15 @@ def _build_v_middle(s: BuilderSet):
         s.build2(trg, lambda t, src: _nth(t, src, i))
 
 
-def _build_singles_refs(s: BuilderSet):
+def _build_singles_refs(s: TargetSet):
     s.setup(_setup_ref_sources)
 
-    def _h_ref(t: TilesetTargetGroup, src: Builder):
+    def _h_ref(t: TilesetTargetGroup, src: V1SourceSet):
         key = "l3-single-h-1"
         t.add(1, 1, src.copy_block_custom(key, 2, 1, 1, 2))
         t.add(3, 1, src.copy_block_custom(key, 2, 1, 1, 2))
 
-    def _v_ref(t: TilesetTargetGroup, src: Builder):
+    def _v_ref(t: TilesetTargetGroup, src: V1SourceSet):
         key = "l3-single-v-1"
         t.add(2, 1, src.copy_custom(key, 2, 2))
         t.add(2, 3, src.copy_custom(key, 2, 2))
@@ -120,6 +118,6 @@ def _build_singles_refs(s: BuilderSet):
     s.build3("single-v-ref", _v_ref, True)
 
 
-def _setup_ref_sources(src: Builder):
+def _setup_ref_sources(src: V1SourceSet):
     src.custom_source("l3-single-h-1")
     src.custom_source("l3-single-v-1")

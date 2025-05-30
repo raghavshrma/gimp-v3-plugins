@@ -1,10 +1,9 @@
-from generator_config import GeneratorConfig
-from tileset_builder import Builder, BuilderSet, QuickBuilder
-from tileset_collection import TilesetTargetGroup
+from tilegen.core import GeneratorConfig, TargetSet, TilesetTargetGroup, utils
+from tilegen.v1_extended_top.v1_builder import V1SourceSet
 
 
 def handle(config: GeneratorConfig):
-    s = BuilderSet(config)
+    s = V1SourceSet(config).create_target_set()
     s.initiate_level(4) # to create l4 group
     s.initiate_level(3)
     s.setup(_setup_sources)
@@ -20,13 +19,13 @@ def handle(config: GeneratorConfig):
 def quick(config: GeneratorConfig):
     handle(config)
 
-def _setup_sources(src: Builder):
+def _setup_sources(src: V1SourceSet):
     src.setup_sample()
     src.setup_corners()
     src.setup_singles(corners = False)
     src.setup_transition_tiles()
 
-def _build_corners_refs(t: TilesetTargetGroup, src: Builder):
+def _build_corners_refs(t: TilesetTargetGroup, src: V1SourceSet):
     t.add(3, 1, src.single_h_full())
 
     t.add(2, 3, [src.single_v(), src.in_corner_tr_ext()])
@@ -34,7 +33,7 @@ def _build_corners_refs(t: TilesetTargetGroup, src: Builder):
 
     t.add(3, 3, src.single_h_full())
 
-def _build_corners(t: TilesetTargetGroup, src: QuickBuilder | Builder):
+def _build_corners(t: TilesetTargetGroup, src: V1SourceSet):
     t.add(2, 1, src.single_left_full())
     t.add(2, 2, [
         src.c(2),

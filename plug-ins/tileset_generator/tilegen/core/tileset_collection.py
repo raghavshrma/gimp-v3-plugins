@@ -2,8 +2,7 @@ import gi
 
 gi.require_version("Gimp", "3.0")
 from gi.repository import Gimp, Gegl
-import utils
-
+from tilegen.core import utils
 
 class Area:
     def __init__(self, x: int, y: int, w: int, h: int):
@@ -402,8 +401,8 @@ class TilesetTargetGroup(TilesetBase):
         self.move_to(layer, index)
         return self.group
 
-    def add(self, col: int, row: int, layers: Gimp.Layer | list[Gimp.Layer]):
-        index = (row - 1) * self.cols + col
+    def add(self, x: int, y: int, layers: Gimp.Layer | list[Gimp.Layer]):
+        index = (y - 1) * self.cols + x
         if isinstance(layers, list):
             for l in layers:
                 self.addi(index, l)
